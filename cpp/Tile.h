@@ -1,14 +1,11 @@
 #ifndef TILE_H
 #define TILE_H
 
-#include <map>
-#include <set>
 #include <utility>
 #include <vector>
 
 using namespace std;
 
-// Directions
 enum Direction
 {
 	NORTH = 0,
@@ -17,36 +14,33 @@ enum Direction
 	WEST = 3
 };
 
-// Tile types
 enum TileType
 {
-	EMPTY,      // No connections (shouldn't exist in valid puzzles)
-	POWER,      // Power source (4 ports)
-	PC,         // Computer endpoint (1 port)
-	STRAIGHT,   // Line: 2 opposite ports
-	CORNER,     // L-shape: 2 adjacent ports
-	T_JUNCTION, // T-shape: 3 ports
-	CROSS       // +: 4 ports
+	EMPTY,
+	POWER,
+	PC,
+	STRAIGHT,
+	CORNER,
+	T_JUNCTION,
+	CROSS
 };
 
-// Tile structure
 struct Tile
 {
 	TileType type;
-	int rotation; // 0, 90, 180, 270 degrees
+	int rotation;
 
 	Tile() : type(EMPTY), rotation(0) {}
 	Tile(TileType t, int r) : type(t), rotation(r) {}
 };
 
-// Board structure
 struct Board
 {
 	int width;
 	int height;
-	bool wraps; // Does the grid wrap around?
+	bool wraps;
 	vector<vector<Tile>> grid;
-	pair<int, int> powerTile; // Location of power source
+	pair<int, int> powerTile;
 
 	Board(int w, int h, bool wrap = false)
 	    : width(w), height(h), wraps(wrap), powerTile({-1, -1})
@@ -59,13 +53,10 @@ struct Board
 	const Tile &at(int row, int col) const { return grid[row][col]; }
 };
 
-// Get active ports for a tile considering its rotation
 vector<Direction> getActivePorts(const Tile &tile);
-
-// Get opposite direction
 Direction opposite(Direction dir);
-
-// Helper to rotate direction
 Direction rotateDirection(Direction dir, int rotation);
+pair<int, int> getNeighbor(int row, int col, Direction dir, int width,
+                           int height, bool wraps);
 
-#endif
+#endif // TILE_H

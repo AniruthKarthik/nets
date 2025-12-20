@@ -1,12 +1,10 @@
 #include "ConnectivityCheck.h"
 #include <iostream>
 
-// DFS traversal for connectivity check
 void dfs(const Graph &graph, pair<int, int> node, set<pair<int, int>> &visited)
 {
 	visited.insert(node);
 
-	// Find neighbors
 	auto it = graph.adjList.find(node);
 	if (it == graph.adjList.end())
 		return;
@@ -20,7 +18,6 @@ void dfs(const Graph &graph, pair<int, int> node, set<pair<int, int>> &visited)
 	}
 }
 
-// Check if graph is fully connected
 bool isFullyConnected(const Graph &graph, pair<int, int> powerSource)
 {
 	if (graph.nodeCount() == 0)
@@ -29,11 +26,9 @@ bool isFullyConnected(const Graph &graph, pair<int, int> powerSource)
 	set<pair<int, int>> visited;
 	dfs(graph, powerSource, visited);
 
-	// All nodes should be visited
 	return visited.size() == graph.nodeCount();
 }
 
-// Count loose ends
 int countLooseEnds(const Board &board)
 {
 	int looseEnds = 0;
@@ -47,13 +42,10 @@ int countLooseEnds(const Board &board)
 			if (tile.type == EMPTY)
 				continue;
 
-			// Get active ports
 			vector<Direction> ports = getActivePorts(tile);
 
-			// Check each port
 			for (Direction dir : ports)
 			{
-				// Get neighbor
 				pair<int, int> neighborPos = getNeighbor(
 				    row, col, dir, board.width, board.height, board.wraps);
 
@@ -66,7 +58,6 @@ int countLooseEnds(const Board &board)
 
 					if (neighbor.type != EMPTY)
 					{
-						// Check if neighbor has opposite port
 						vector<Direction> neighborPorts =
 						    getActivePorts(neighbor);
 						Direction oppositeDir = opposite(dir);
@@ -93,7 +84,6 @@ int countLooseEnds(const Board &board)
 	return looseEnds;
 }
 
-// DFS for cycle detection
 bool dfsCycleDetection(const Graph &graph, pair<int, int> node,
                        pair<int, int> parent, set<pair<int, int>> &visited)
 {
@@ -114,7 +104,6 @@ bool dfsCycleDetection(const Graph &graph, pair<int, int> node,
 		}
 		else if (neighbor != parent)
 		{
-			// Found a back edge (cycle)
 			return true;
 		}
 	}
@@ -122,48 +111,41 @@ bool dfsCycleDetection(const Graph &graph, pair<int, int> node,
 	return false;
 }
 
-// Check for closed loops
 bool hasClosedLoop(const Graph &graph, pair<int, int> startNode)
 {
 	set<pair<int, int>> visited;
 	return dfsCycleDetection(graph, startNode, {-1, -1}, visited);
 }
 
-// Main validation function
 bool isSolved(const Board &board)
 {
-	// Check if power tile exists
 	if (board.powerTile.first == -1)
 	{
-		cout << "Error: No power source found!" << endl;
+		std::cout << "Error: No power source found!" << std::endl;
 		return false;
 	}
 
-	// Build graph
 	Graph graph = buildGraph(board);
 
-	// Check 1: No loose ends
 	int looseEnds = countLooseEnds(board);
 	if (looseEnds > 0)
 	{
-		cout << "Loose ends detected: " << looseEnds << endl;
+		std::cout << "Loose ends detected: " << looseEnds << std::endl;
 		return false;
 	}
 
-	// Check 2: Fully connected
 	if (!isFullyConnected(graph, board.powerTile))
 	{
-		cout << "Network is not fully connected!" << endl;
+		std::cout << "Network is not fully connected!" << std::endl;
 		return false;
 	}
 
-	// Check 3: No closed loops
 	if (hasClosedLoop(graph, board.powerTile))
 	{
-		cout << "Closed loop detected!" << endl;
+		std::cout << "Closed loop detected!" << std::endl;
 		return false;
 	}
 
-	cout << "✓ Puzzle solved!" << endl;
+	std::cout << "✓ Puzzle solved!" << std::endl;
 	return true;
 }

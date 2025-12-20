@@ -1,11 +1,9 @@
 #include "Tile.h"
 
-// Returns active ports based on tile type and rotation
 vector<Direction> getActivePorts(const Tile &tile)
 {
 	vector<Direction> basePorts;
 
-	// Define base ports (at 0° rotation)
 	switch (tile.type)
 	{
 	case EMPTY:
@@ -33,9 +31,8 @@ vector<Direction> getActivePorts(const Tile &tile)
 		break;
 	}
 
-	// Apply rotation
 	vector<Direction> rotatedPorts;
-	int rotSteps = tile.rotation / 90; // 0, 1, 2, 3
+	int rotSteps = tile.rotation / 90;
 
 	for (Direction dir : basePorts)
 	{
@@ -46,15 +43,51 @@ vector<Direction> getActivePorts(const Tile &tile)
 	return rotatedPorts;
 }
 
-// Get opposite direction
 Direction opposite(Direction dir)
 {
 	return static_cast<Direction>((dir + 2) % 4);
 }
 
-// Rotate a direction by given degrees
 Direction rotateDirection(Direction dir, int rotation)
 {
 	int steps = rotation / 90;
 	return static_cast<Direction>((dir + steps) % 4);
+}
+
+pair<int, int> getNeighbor(int row, int col, Direction dir, int width,
+                           int height, bool wraps)
+{
+	int newRow = row;
+	int newCol = col;
+
+	switch (dir)
+	{
+	case NORTH:
+		newRow--;
+		break;
+	case SOUTH:
+		newRow++;
+		break;
+	case EAST:
+		newCol++;
+		break;
+	case WEST:
+		newCol--;
+		break;
+	}
+
+	if (wraps)
+	{
+		newRow = (newRow + height) % height;
+		newCol = (newCol + width) % width;
+	}
+	else
+	{
+		if (newRow < 0 || newRow >= height || newCol < 0 || newCol >= width)
+		{
+			return {-1, -1};
+		}
+	}
+
+	return {newRow, newCol};
 }
