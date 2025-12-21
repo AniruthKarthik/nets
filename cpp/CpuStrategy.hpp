@@ -30,9 +30,10 @@ inline vector<Move> generateMoves(const Board &board) {
 }
 
 inline int evaluateBoard(const Board &board) {
+  Graph graph = buildGraph(board);
   int looseEnds = countLooseEnds(board);
-  int components = countComponents(board);
-  bool hasLoop = hasClosedLoop(board);
+  int components = countComponents(graph);
+  bool hasLoop = hasClosedLoop(graph);
 
   // Simple heuristic
   int score = (looseEnds * 10) + (components * 5) + (hasLoop ? 1000 : 0);

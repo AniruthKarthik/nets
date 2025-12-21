@@ -128,7 +128,8 @@ void test_full_game_simulation() {
     // Win!
     
     Board b3(2, 1); // 2 width, 1 height
-    setTile(b3, 0, 0, PC, 0); // N (bad)
+    setTile(b3, 0, 0, POWER, 0); // N (bad)
+    b3.powerTile = {0,0};
     setTile(b3, 0, 1, PC, 0); // N (bad)
     
     cout << "Initial board state:" << endl;
@@ -136,15 +137,15 @@ void test_full_game_simulation() {
 
     // CPU should solve this.
     int limit = 10;
-    while(!checkWin(b3) && limit-- > 0) {
+    while(!isSolved(b3) && limit-- > 0) {
         Move m = chooseBestMove(b3);
         cout << "Chosen move: " << m.x << "," << m.y << " rot " << m.rotation << endl;
         applyMove(b3, m);
         printBoard(b3);
-        cout << "Loose: " << countLooseEnds(b3) << " Comps: " << countComponents(b3) << " Win: " << checkWin(b3) << endl;
+        cout << "Loose: " << countLooseEnds(b3) << " Comps: " << countComponents(b3) << " Win: " << isSolved(b3) << endl;
     }
     
-    assert(checkWin(b3));
+    assert(isSolved(b3));
     cout << "Full Game Simulation OK" << endl;
 }
 

@@ -38,9 +38,8 @@ inline bool isFullyConnected(const Graph &graph, pair<int, int> powerSource)
 	return visited.size() == graph.nodeCount();
 }
 
-inline int countComponents(const Board &board)
+inline int countComponents(const Graph &graph)
 {
-	Graph graph = buildGraph(board);
 	set<pair<int, int>> visited;
 	int components = 0;
 
@@ -55,6 +54,12 @@ inline int countComponents(const Board &board)
 	return components;
 }
 
+inline int countComponents(const Board &board)
+{
+	Graph graph = buildGraph(board);
+	return countComponents(graph);
+}
+
 inline int countLooseEnds(const Board &board)
 {
 	int looseEnds = 0;
@@ -65,7 +70,7 @@ inline int countLooseEnds(const Board &board)
 		{
 			const Tile &tile = board.at(row, col);
 
-			if (tile.type == EMPTY)
+			if (tile.type == EMPTY || tile.type == POWER)
 				continue;
 
 			vector<Direction> ports = getActivePorts(tile);
@@ -143,9 +148,8 @@ inline bool hasClosedLoop(const Graph &graph, pair<int, int> startNode)
 	return dfsCycleDetection(graph, startNode, {-1, -1}, visited);
 }
 
-inline bool hasClosedLoop(const Board &board)
+inline bool hasClosedLoop(const Graph &graph)
 {
-	Graph graph = buildGraph(board);
 	set<pair<int, int>> visited;
 
 	for (auto const &[node, neighbors] : graph.adjList)
@@ -159,6 +163,12 @@ inline bool hasClosedLoop(const Board &board)
 		}
 	}
 	return false;
+}
+
+inline bool hasClosedLoop(const Board &board)
+{
+	Graph graph = buildGraph(board);
+	return hasClosedLoop(graph);
 }
 
 inline bool isSolved(const Board &board)
