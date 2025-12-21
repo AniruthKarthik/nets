@@ -1,21 +1,9 @@
 #ifndef CPU_STRATEGY_H
 #define CPU_STRATEGY_H
 
+#include "Tile.h"
 #include <vector>
 using namespace std;
-
-enum TileType { POWER, PC, STRAIGHT, CORNER, T_JUNCTION, CROSS };
-
-struct Tile {
-  TileType type;
-  int rotation;
-};
-
-struct Board {
-  int rows;
-  int cols;
-  vector<vector<Tile>> grid;
-};
 
 struct Move {
   int x;

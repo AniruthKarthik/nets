@@ -1,0 +1,37 @@
+{
+  "metadata": {
+    "width": 3,
+    "height": 3,
+    "wraps": false,
+    "status": "PLAYING",
+    "turn": 1,
+    "last_move": {
+      "actor": "CPU",
+      "row": 0,
+      "col": 1,
+      "rotation": 90
+    }
+  },
+  "stats": {
+    "loose_ends": 2,
+    "components": 1,
+    "is_solved": false
+  },
+  "grid": [
+    [
+      { "type": "CORNER", "rotation": 0, "locked": false },
+      { "type": "T_JUNCTION", "rotation": 90, "locked": false },
+      { "type": "STRAIGHT", "rotation": 0, "locked": true }
+    ],
+    [
+      { "type": "STRAIGHT", "rotation": 90, "locked": false },
+      { "type": "CROSS", "rotation": 0, "locked": false },
+      { "type": "PC", "rotation": 270, "locked": false }
+    ],
+    [
+      { "type": "EMPTY", "rotation": 0, "locked": false },
+      { "type": "POWER", "rotation": 0, "locked": true },
+      { "type": "CORNER", "rotation": 180, "locked": false }
+    ]
+  ]
+}
