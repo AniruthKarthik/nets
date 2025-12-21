@@ -1,7 +1,16 @@
-#include "ConnectivityCheck.h"
+#ifndef CONNECTIVITY_CHECK_HPP
+#define CONNECTIVITY_CHECK_HPP
+
+#include "GraphBuilder.hpp"
+#include "Tile.hpp"
+#include <set>
 #include <iostream>
 
-void dfs(const Graph &graph, pair<int, int> node, set<pair<int, int>> &visited)
+using namespace std;
+
+// Implementations
+
+inline void dfs(const Graph &graph, pair<int, int> node, set<pair<int, int>> &visited)
 {
 	visited.insert(node);
 
@@ -18,7 +27,7 @@ void dfs(const Graph &graph, pair<int, int> node, set<pair<int, int>> &visited)
 	}
 }
 
-bool isFullyConnected(const Graph &graph, pair<int, int> powerSource)
+inline bool isFullyConnected(const Graph &graph, pair<int, int> powerSource)
 {
 	if (graph.nodeCount() == 0)
 		return false;
@@ -29,7 +38,7 @@ bool isFullyConnected(const Graph &graph, pair<int, int> powerSource)
 	return visited.size() == graph.nodeCount();
 }
 
-int countComponents(const Board &board)
+inline int countComponents(const Board &board)
 {
 	Graph graph = buildGraph(board);
 	set<pair<int, int>> visited;
@@ -46,7 +55,7 @@ int countComponents(const Board &board)
 	return components;
 }
 
-int countLooseEnds(const Board &board)
+inline int countLooseEnds(const Board &board)
 {
 	int looseEnds = 0;
 
@@ -101,7 +110,7 @@ int countLooseEnds(const Board &board)
 	return looseEnds;
 }
 
-bool dfsCycleDetection(const Graph &graph, pair<int, int> node,
+inline bool dfsCycleDetection(const Graph &graph, pair<int, int> node,
                        pair<int, int> parent, set<pair<int, int>> &visited)
 {
 	visited.insert(node);
@@ -128,13 +137,13 @@ bool dfsCycleDetection(const Graph &graph, pair<int, int> node,
 	return false;
 }
 
-bool hasClosedLoop(const Graph &graph, pair<int, int> startNode)
+inline bool hasClosedLoop(const Graph &graph, pair<int, int> startNode)
 {
 	set<pair<int, int>> visited;
 	return dfsCycleDetection(graph, startNode, {-1, -1}, visited);
 }
 
-bool hasClosedLoop(const Board &board)
+inline bool hasClosedLoop(const Board &board)
 {
 	Graph graph = buildGraph(board);
 	set<pair<int, int>> visited;
@@ -152,11 +161,11 @@ bool hasClosedLoop(const Board &board)
 	return false;
 }
 
-bool isSolved(const Board &board)
+inline bool isSolved(const Board &board)
 {
 	if (board.powerTile.first == -1)
 	{
-		std::cout << "Error: No power source found!" << std::endl;
+		// std::cout << "Error: No power source found!" << std::endl;
 		return false;
 	}
 
@@ -165,22 +174,24 @@ bool isSolved(const Board &board)
 	int looseEnds = countLooseEnds(board);
 	if (looseEnds > 0)
 	{
-		std::cout << "Loose ends detected: " << looseEnds << std::endl;
+		// std::cout << "Loose ends detected: " << looseEnds << std::endl;
 		return false;
 	}
 
 	if (!isFullyConnected(graph, board.powerTile))
 	{
-		std::cout << "Network is not fully connected!" << std::endl;
+		// std::cout << "Network is not fully connected!" << std::endl;
 		return false;
 	}
 
 	if (hasClosedLoop(graph, board.powerTile))
 	{
-		std::cout << "Closed loop detected!" << std::endl;
+		// std::cout << "Closed loop detected!" << std::endl;
 		return false;
 	}
 
-	std::cout << "✓ Puzzle solved!" << std::endl;
+	// std::cout << "✓ Puzzle solved!" << std::endl;
 	return true;
 }
+
+#endif // CONNECTIVITY_CHECK_HPP

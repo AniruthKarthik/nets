@@ -1,16 +1,17 @@
-#include "GameLogic.h"
+#ifndef GAME_LOGIC_HPP
+#define GAME_LOGIC_HPP
 
-// external functions - @krishanth's
-int countLooseEnds(const Board &board);
-int countComponents(const Board &board);
-bool hasClosedLoop(const Board &board);
+#include "ConnectivityCheck.hpp"
+#include "Tile.hpp"
 
-void applyMove(Board &board, const Move &move) {
+// Implementations
+
+inline void applyMove(Board &board, const Move &move) {
   Tile &tile = board.grid[move.x][move.y];
   tile.rotation = (tile.rotation + move.rotation) % 360;
 }
 
-bool checkWin(const Board &board) {
+inline bool checkWin(const Board &board) {
   int looseEnds = countLooseEnds(board);
   int components = countComponents(board);
   bool loopExists = hasClosedLoop(board);
@@ -20,3 +21,5 @@ bool checkWin(const Board &board) {
   }
   return false;
 }
+
+#endif // GAME_LOGIC_HPP

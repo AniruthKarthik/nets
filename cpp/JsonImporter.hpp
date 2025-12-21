@@ -1,24 +1,29 @@
-#include "JsonImporter.h"
+#ifndef JSON_IMPORTER_HPP
+#define JSON_IMPORTER_HPP
+
+#include "JsonUtils.hpp"
+#include <string>
 #include <fstream>
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 
-GameState importGameState(const std::string& filename) {
-    std::ifstream i(filename);
-    json j;
-    i >> j;
+// Implementation
 
-    int width = j["metadata"]["width"];
-    int height = j["metadata"]["height"];
-    bool wraps = j["metadata"]["wraps"];
+inline GameState importGameState(const std::string& filename) {
+    std::ifstream i(filename);
+    json j = json::parse(i, nullptr, true, true);
+
+    int width = j["meta"]["width"];
+    int height = j["meta"]["height"];
+    bool wraps = j["meta"]["wraps"];
 
     GameState state(width, height, wraps);
 
-    state.status = stringToStatus(j["metadata"]["status"]);
-    state.turn = j["metadata"]["turn"];
+    state.status = stringToStatus(j["meta"]["status"]);
+    state.turn = static_cast<int>(stringToActor(j["meta"]["turn"]));
     
-    auto lm = j["metadata"]["last_move"];
+    auto lm = j["last_move"];
     state.lastMove.actor = stringToActor(lm["actor"]);
     state.lastMove.row = lm["row"];
     state.lastMove.col = lm["col"];
@@ -34,7 +39,8 @@ GameState importGameState(const std::string& filename) {
             auto tObj = grid[r][c];
             TileType type = stringToTileType(tObj["type"]);
             int rotation = tObj["rotation"];
-            state.board.grid[r][c] = Tile(type, rotation);
+            bool locked = tObj.contains("locked") ? tObj["locked"].get<bool>() : false;
+            state.board.grid[r][c] = Tile(type, rotation, locked);
             
             if (type == POWER) {
                 state.board.powerTile = {r, c};
@@ -44,3 +50,5 @@ GameState importGameState(const std::string& filename) {
 
     return state;
 }
+
+#endif // JSON_IMPORTER_HPP

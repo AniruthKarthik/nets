@@ -1,25 +1,47 @@
-#include "JsonExporter.h"
+#ifndef JSON_EXPORTER_HPP
+#define JSON_EXPORTER_HPP
+
+#include "JsonUtils.hpp"
+#include <string>
 #include <fstream>
 #include <iostream>
+#include <iomanip>
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 
-void exportGameState(const GameState& state, const std::string& filename) {
+// Implementation
+
+inline void exportGameState(const GameState& state, const std::string& filename) {
     json j;
 
-    j["metadata"] = {
+    j["meta"] = {
         {"width", state.board.width},
         {"height", state.board.height},
         {"wraps", state.board.wraps},
         {"status", statusToString(state.status)},
-        {"turn", state.turn},
-        {"last_move", {
-            {"actor", actorToString(state.lastMove.actor)},
-            {"row", state.lastMove.row},
-            {"col", state.lastMove.col},
-            {"rotation", state.lastMove.rotation}
+        {"turn", actorToString(static_cast<Actor>(state.turn))},
+        {"seed", 0}
+    };
+
+    j["rules"] = {
+        {"allow_loops", false},
+        {"rotation_rules", {
+            {"EMPTY", json::array()},
+            {"POWER", {0}},
+            {"PC", {0, 90, 180, 270}},
+            {"STRAIGHT", {0, 90}},
+            {"CORNER", {0, 90, 180, 270}},
+            {"T_JUNCTION", {0, 90, 180, 270}},
+            {"CROSS", {0}}
         }}
+    };
+
+    j["last_move"] = {
+        {"actor", actorToString(state.lastMove.actor)},
+        {"row", state.lastMove.row},
+        {"col", state.lastMove.col},
+        {"rotation", state.lastMove.rotation}
     };
 
     j["stats"] = {
@@ -36,10 +58,7 @@ void exportGameState(const GameState& state, const std::string& filename) {
             row.push_back({
                 {"type", tileTypeToString(t.type)},
                 {"rotation", t.rotation},
-                {"locked", false} // C++ logic doesn't seem to have locked bit in Tile struct yet, defaulting to false or need update? 
-                                  // Prompt said "locked state". Board struct doesn't have it.
-                                  // "do not change existing game algorithms"
-                                  // I will just default to false for now as C++ doesn't track it.
+                {"locked", t.locked}
             });
         }
         grid.push_back(row);
@@ -49,3 +68,5 @@ void exportGameState(const GameState& state, const std::string& filename) {
     std::ofstream o(filename);
     o << std::setw(2) << j << std::endl;
 }
+
+#endif // JSON_EXPORTER_HPP

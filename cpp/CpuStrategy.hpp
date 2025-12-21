@@ -1,35 +1,47 @@
-#include "CpuStrategy.h"
-#include "GameLogic.h"
-#include "ConnectivityCheck.h"
+#ifndef CPU_STRATEGY_HPP
+#define CPU_STRATEGY_HPP
+
+#include "Tile.hpp"
+#include "ConnectivityCheck.hpp"
+#include "GameLogic.hpp"
 #include <climits>
+#include <vector>
 
-// external functions - @krishanth's
-// Removed manual declarations as we included ConnectivityCheck.h
+using namespace std;
 
-vector<Move> generateMoves(const Board &board) {
+// Implementations
+
+inline vector<Move> generateMoves(const Board &board) {
   vector<Move> moves;
 
   for (int i = 0; i < board.height; i++) {
     for (int j = 0; j < board.width; j++) {
-      moves.push_back({i, j, 90});
-      moves.push_back({i, j, 180});
-      moves.push_back({i, j, 270});
+      if (board.at(i, j).type == EMPTY) continue;
+      
+      // Only generate moves for non-locked tiles.
+      if (!board.at(i, j).locked) {
+           moves.push_back({i, j, 90});
+           moves.push_back({i, j, 180});
+           moves.push_back({i, j, 270});
+      }
     }
   }
   return moves;
 }
 
-int evaluateBoard(const Board &board) {
+inline int evaluateBoard(const Board &board) {
   int looseEnds = countLooseEnds(board);
   int components = countComponents(board);
   bool hasLoop = hasClosedLoop(board);
 
+  // Simple heuristic
   int score = (looseEnds * 10) + (components * 5) + (hasLoop ? 1000 : 0);
   return score;
 }
 
-Move chooseBestMove(const Board &board) {
+inline Move chooseBestMove(const Board &board) {
   vector<Move> moves = generateMoves(board);
+  if (moves.empty()) return {0,0,0}; 
 
   int bestScore = INT_MAX;
   Move bestMove = moves[0];
@@ -46,3 +58,5 @@ Move chooseBestMove(const Board &board) {
   }
   return bestMove;
 }
+
+#endif // CPU_STRATEGY_HPP

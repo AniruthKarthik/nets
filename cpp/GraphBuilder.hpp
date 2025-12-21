@@ -1,6 +1,29 @@
-#include "GraphBuilder.h"
+#ifndef GRAPH_BUILDER_HPP
+#define GRAPH_BUILDER_HPP
 
-Graph buildGraph(const Board &board)
+#include "Tile.hpp"
+#include <map>
+#include <utility>
+#include <vector>
+
+using namespace std;
+
+struct Graph
+{
+	map<pair<int, int>, vector<pair<int, int>>> adjList;
+
+	void addEdge(pair<int, int> a, pair<int, int> b)
+	{
+		adjList[a].push_back(b);
+		adjList[b].push_back(a);
+	}
+
+	int nodeCount() const { return adjList.size(); }
+};
+
+// Implementation
+
+inline Graph buildGraph(const Board &board)
 {
 	Graph graph;
 
@@ -71,3 +94,5 @@ Graph buildGraph(const Board &board)
 
 	return graph;
 }
+
+#endif // GRAPH_BUILDER_HPP
