@@ -1,10 +1,10 @@
 #include <iostream>
 #include <vector>
 #include <cassert>
-#include "Tile.h"
-#include "CpuStrategy.h"
-#include "GameLogic.h"
-#include "ConnectivityCheck.h"
+#include "../cpp/Tile.hpp"
+#include "../cpp/CpuStrategy.hpp"
+#include "../cpp/GameLogic.hpp"
+#include "../cpp/ConnectivityCheck.hpp"
 
 using namespace std;
 
