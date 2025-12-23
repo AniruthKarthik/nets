@@ -209,9 +209,8 @@ public class GameController {
                             gameState.getMeta().getStatus().equals("PLAYING")) {
 
                         Tile tile = tileView.getTile();
-                        if (!tile.isLocked()) {
-                            int rotation = event.getButton() == MouseButton.PRIMARY ? 90 : -90;
-                            handleHumanMove(tileView.getRow(), tileView.getCol(), rotation);
+                        if (!tile.isLocked() && event.getButton() == MouseButton.PRIMARY) {
+                            handleHumanMove(tileView.getRow(), tileView.getCol(), 90);
                         }
                     }
                 });

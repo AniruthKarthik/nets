@@ -131,8 +131,7 @@ public class NetsGame extends Application {
         alert.setHeaderText("🎮 Network Connection Game!");
         alert.setContentText(
                 "Board Size: " + currentRows + "×" + currentCols + "\n\n" +
-                        "🖱️ Left Click: Rotate wire clockwise\n" +
-                        "🖱️ Right Click: Rotate wire counter-clockwise\n\n" +
+                        "🖱️ Left Click: Rotate wire clockwise\n\n" +
                         "🎯 Goal: Connect all PCs to the power source!\n" +
                         "Rotate the network wires to complete the connections.\n\n" +
                         "Good luck! 🍀"
@@ -253,7 +252,6 @@ public class NetsGame extends Application {
         Label controls = new Label(
                 "🖱️ Controls:\n" +
                         "• Left Click: Rotate network wire clockwise (90°)\n" +
-                        "• Right Click: Rotate network wire counter-clockwise (-90°)\n" +
                         "• Locked tiles (power source with lock icon) cannot be rotated"
         );
 
