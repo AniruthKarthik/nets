@@ -16,14 +16,17 @@ using namespace std;
 
 int main(int argc, char* argv[]) {
     try {
-        json inputJson;
+        json request;
         if (argc > 1) {
             string inputFile = argv[1];
             ifstream i(inputFile);
-            inputJson = json::parse(i);
+            request = json::parse(i);
         } else {
-            inputJson = json::parse(cin);
+            request = json::parse(cin);
         }
+
+        string action = request["action"];
+        json inputJson = request["gameState"];
 
         int width = inputJson["meta"]["width"];
         int height = inputJson["meta"]["height"];
@@ -50,20 +53,29 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        // 3. Strategy (CPU Turn)
-        if (state.turn == CPU) { // Force move if it's CPU turn, ignore solved check (controller handles that)
-             Move bestMove = chooseBestMove(state.board);
-             
-             json response;
-             response["move"] = {
-                 {"row", bestMove.x},
-                 {"col", bestMove.y},
-                 {"rotation", bestMove.rotation}
-             };
-             cout << response << endl;
-        } else {
-             cout << "{}" << endl;
+        json response;
+
+        if (action == "get_cpu_move") {
+            Move bestMove = chooseBestMove(state.board);
+            response["move"] = {
+                {"row", bestMove.x},
+                {"col", bestMove.y},
+                {"rotation", bestMove.rotation}
+            };
+        } else if (action == "get_stats") {
+            Graph graph = buildGraph(state.board);
+            int components = countComponents(graph);
+            int looseEnds = countLooseEnds(state.board);
+            bool solved = isSolved(state.board);
+
+            response["stats"] = {
+                {"components", components},
+                {"looseEnds", looseEnds},
+                {"solved", solved}
+            };
         }
+        
+        cout << response << endl;
 
     } catch (const std::exception& e) {
         // Return empty object on error as per constraint, or log to stderr

@@ -281,51 +281,59 @@ public class GameController {
         }
     }
 
+    private com.google.gson.JsonObject invokeCppEngine(String action) throws IOException, InterruptedException {
+        Gson gson = new GsonBuilder().create();
+
+        // Create the request object
+        com.google.gson.JsonObject request = new com.google.gson.JsonObject();
+        request.addProperty("action", action);
+        request.add("gameState", gson.toJsonTree(gameState));
+
+        // Locate C++ engine
+        File engineExe = new File("..", "nets_engine.exe");
+        if (!engineExe.exists()) {
+            engineExe = new File("nets_engine.exe");
+        }
+        
+        if (!engineExe.exists()) {
+             throw new FileNotFoundException("Could not find nets_engine.exe at " + new File("..", "nets_engine.exe").getAbsolutePath() + " or " + new File("nets_engine.exe").getAbsolutePath());
+        }
+
+        // Call C++ engine
+        ProcessBuilder pb = new ProcessBuilder(engineExe.getCanonicalPath());
+        Process process = pb.start();
+
+        // Write request to stdin
+        try (OutputStreamWriter writer = new OutputStreamWriter(process.getOutputStream())) {
+            gson.toJson(request, writer);
+        }
+
+        // Read response from stdout
+        StringBuilder output = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line);
+            }
+        }
+
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+             // Try reading stderr if failed
+             try (BufferedReader errReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+                String line;
+                while((line = errReader.readLine()) != null) System.err.println("CPP Error: " + line);
+             }
+             throw new RuntimeException("C++ engine exited with code " + exitCode);
+        }
+
+        return gson.fromJson(output.toString(), com.google.gson.JsonObject.class);
+    }
+
     private void performStandaloneCpuMove() {
         try {
-            Gson gson = new GsonBuilder().create();
-            
-            // Locate C++ engine
-            File engineExe = new File("..", "nets_engine.exe");
-            if (!engineExe.exists()) {
-                engineExe = new File("nets_engine.exe");
-            }
-            
-            if (!engineExe.exists()) {
-                 throw new FileNotFoundException("Could not find nets_engine.exe at " + new File("..", "nets_engine.exe").getAbsolutePath() + " or " + new File("nets_engine.exe").getAbsolutePath());
-            }
+            com.google.gson.JsonObject response = invokeCppEngine("get_cpu_move");
 
-            // Call C++ engine
-            ProcessBuilder pb = new ProcessBuilder(engineExe.getCanonicalPath());
-            // pb.directory(new File(".")); // Inherit current working directory
-            Process process = pb.start();
-
-            // Write current state to stdin
-            try (OutputStreamWriter writer = new OutputStreamWriter(process.getOutputStream())) {
-                gson.toJson(gameState, writer);
-            }
-
-            // Read response from stdout
-            StringBuilder output = new StringBuilder();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    output.append(line);
-                }
-            }
-
-            int exitCode = process.waitFor();
-            if (exitCode != 0) {
-                 // Try reading stderr if failed
-                 try (BufferedReader errReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
-                    String line;
-                    while((line = errReader.readLine()) != null) System.err.println("CPP Error: " + line);
-                 }
-                 throw new RuntimeException("C++ engine exited with code " + exitCode);
-            }
-
-            // Parse response: { "move": { "row": ..., "col": ..., "rotation": ... } }
-            com.google.gson.JsonObject response = gson.fromJson(output.toString(), com.google.gson.JsonObject.class);
             if (response != null && response.has("move")) {
                 com.google.gson.JsonObject moveObj = response.getAsJsonObject("move");
                 int r = moveObj.get("row").getAsInt();
@@ -342,7 +350,7 @@ public class GameController {
                 updateStats();
                 updatePoweredStatus();
             } else {
-                System.err.println("Invalid response from CPU: " + output);
+                System.err.println("Invalid response from CPU: " + (response != null ? response.toString() : "null"));
             }
 
             // Update UI
@@ -371,11 +379,23 @@ public class GameController {
     }
 
     private void updateStats() {
-        Tile[][] grid = gameState.getGrid();
-        Stats stats = gameState.getStats();
-        stats.setComponents(calculateComponents(grid));
-        stats.setLooseEnds(calculateLooseEnds(grid));
-        stats.setSolved(checkWinCondition());
+        try {
+            com.google.gson.JsonObject response = invokeCppEngine("get_stats");
+            if (response != null && response.has("stats")) {
+                com.google.gson.JsonObject statsObj = response.getAsJsonObject("stats");
+                int components = statsObj.get("components").getAsInt();
+                int looseEnds = statsObj.get("looseEnds").getAsInt();
+                boolean solved = statsObj.get("solved").getAsBoolean();
+
+                Stats stats = gameState.getStats();
+                stats.setComponents(components);
+                stats.setLooseEnds(looseEnds);
+                stats.setSolved(solved); // This is the 'mathematical' solved state
+            }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+            showError("Error getting stats from C++ engine: " + e.getMessage());
+        }
     }
 
     private int calculateLooseEnds(Tile[][] grid) {
@@ -556,26 +576,25 @@ public class GameController {
     }
 
     private boolean checkWinCondition() {
-        Tile[][] grid = gameState.getGrid();
-        int rows = grid.length;
-        int cols = grid[0].length;
-
-        // 1. Check loose ends and components
-        if (calculateLooseEnds(grid) != 0 || calculateComponents(grid) != 1) {
+        // The 'solved' status from C++ engine checks for components, loose ends, and loops.
+        boolean isMathematicallySolved = gameState.getStats().isSolved();
+        if (!isMathematicallySolved) {
             return false;
         }
 
-        // 2. Check if all PCs and non-EMPTY tiles are powered
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
+        // Additionally, for the win condition, all non-empty tiles must be powered.
+        Tile[][] grid = gameState.getGrid();
+        for (int i = 0; i < grid.length; i++) {
+            for (int j = 0; j < grid[0].length; j++) {
                 Tile tile = grid[i][j];
                 if (tile.getType() == TileType.EMPTY) continue;
                 
                 if (!tile.isPowered()) {
-                    return false;
+                    return false; // Found a non-empty, unpowered tile.
                 }
             }
         }
+        
         return true;
     }
 
