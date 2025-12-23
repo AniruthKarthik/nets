@@ -93,12 +93,9 @@ public class TileView extends Canvas {
 
     private void drawTJunction(GraphicsContext gc) {
         double center = SIZE / 2;
-        gc.strokeLine(center, 0, center, SIZE);
-        gc.strokeLine(0, center, SIZE, center);
-        // Block bottom
-        gc.setStroke(BG_COLOR);
-        gc.setLineWidth(LINE_WIDTH + 2);
-        gc.strokeLine(center, SIZE - LINE_WIDTH, center, SIZE);
+        // Draw T-shape: top, left, and right (no bottom)
+        gc.strokeLine(center, 0, center, center);  // Top line
+        gc.strokeLine(0, center, SIZE, center);     // Horizontal line (left to right)
     }
 
     private void drawPC(GraphicsContext gc) {

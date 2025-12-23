@@ -47,7 +47,7 @@ public class NetsGame extends Application {
     private Optional<int[]> showStartupDialog() {
         Dialog<int[]> dialog = new Dialog<>();
         dialog.setTitle("New Game Setup");
-        dialog.setHeaderText("Configure Your Game Board");
+        dialog.setHeaderText("Configure Your Network Board");
 
         // Set the button types
         ButtonType startButtonType = new ButtonType("Start Game", ButtonBar.ButtonData.OK_DONE);
@@ -128,12 +128,13 @@ public class NetsGame extends Application {
     private void showWelcomeMessage() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Welcome to Nets!");
-        alert.setHeaderText("🎮 Game Ready!");
+        alert.setHeaderText("🎮 Network Connection Game!");
         alert.setContentText(
                 "Board Size: " + currentRows + "×" + currentCols + "\n\n" +
-                        "🖱️ Left Click: Rotate clockwise\n" +
-                        "🖱️ Right Click: Rotate counter-clockwise\n\n" +
-                        "Connect all tiles to win!\n" +
+                        "🖱️ Left Click: Rotate wire clockwise\n" +
+                        "🖱️ Right Click: Rotate wire counter-clockwise\n\n" +
+                        "🎯 Goal: Connect all PCs to the power source!\n" +
+                        "Rotate the network wires to complete the connections.\n\n" +
                         "Good luck! 🍀"
         );
         alert.showAndWait();
@@ -246,30 +247,31 @@ public class NetsGame extends Application {
         VBox content = new VBox(10);
         content.setPadding(new Insets(10));
 
-        Label goal = new Label("🎯 Goal: Connect all tiles to form a single network");
+        Label goal = new Label("🎯 Goal: Connect all PCs to the power source through the network");
         goal.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
 
         Label controls = new Label(
                 "🖱️ Controls:\n" +
-                        "• Left Click: Rotate tile clockwise (90°)\n" +
-                        "• Right Click: Rotate tile counter-clockwise (-90°)\n" +
-                        "• Locked tiles (with lock icon) cannot be rotated"
+                        "• Left Click: Rotate network wire clockwise (90°)\n" +
+                        "• Right Click: Rotate network wire counter-clockwise (-90°)\n" +
+                        "• Locked tiles (power source with lock icon) cannot be rotated"
         );
 
         Label tiles = new Label(
-                "🔧 Tile Types:\n" +
-                        "• Straight: Connects two opposite sides\n" +
-                        "• Corner: Connects two adjacent sides\n" +
-                        "• T-Junction: Connects three sides\n" +
-                        "• Power: Power source (locked)\n" +
-                        "• PC: Computer terminal"
+                "🔌 Network Components:\n" +
+                        "• Straight Wire: Connects two opposite sides\n" +
+                        "• Corner Wire: Connects two adjacent sides\n" +
+                        "• T-Junction Wire: Connects three sides\n" +
+                        "• ⚡ Power Source: Network power supply (locked, cannot rotate)\n" +
+                        "• 💻 PC: Computer that needs network connection (square tiles)"
         );
 
         Label win = new Label(
                 "🏆 Win Condition:\n" +
-                        "• All tiles connected (1 component)\n" +
-                        "• No loose ends (0 loose ends)\n" +
-                        "• No loops"
+                        "• All PCs connected to power source through network wires\n" +
+                        "• Single connected network (1 component)\n" +
+                        "• No loose wire ends (0 loose ends)\n" +
+                        "• No loops in the network"
         );
         win.setStyle("-fx-font-weight: bold;");
 
@@ -277,7 +279,7 @@ public class NetsGame extends Application {
                 tiles, new Separator(), win);
 
         alert.getDialogPane().setContent(content);
-        alert.getDialogPane().setPrefWidth(500);
+        alert.getDialogPane().setPrefWidth(550);
         alert.showAndWait();
     }
 
