@@ -142,9 +142,15 @@ public class TileView extends Canvas {
     private void drawPower(GraphicsContext gc) {
         double center = SIZE / 2;
         
-        // Draw 4-way connections for power
-        gc.strokeLine(center, 0, center, SIZE);
-        gc.strokeLine(0, center, SIZE, center);
+        // Dynamically draw connections for the power source
+        boolean[] conns = tile.getConnections();
+        if (conns != null) {
+            // N, E, S, W
+            if (conns.length > 0 && conns[0]) gc.strokeLine(center, 0, center, center);
+            if (conns.length > 1 && conns[1]) gc.strokeLine(center, center, SIZE, center);
+            if (conns.length > 2 && conns[2]) gc.strokeLine(center, center, center, SIZE);
+            if (conns.length > 3 && conns[3]) gc.strokeLine(0, center, center, center);
+        }
 
         // Draw power as filled square (black/dark)
         double squareSize = 30;

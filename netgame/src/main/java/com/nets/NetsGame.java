@@ -131,8 +131,7 @@ public class NetsGame extends Application {
         alert.setHeaderText("🎮 Network Connection Game!");
         alert.setContentText(
                 "Board Size: " + currentRows + "×" + currentCols + "\n\n" +
-                        "🖱️ Left Click: Rotate wire clockwise\n" +
-                        "🖱️ Right Click: Rotate wire counter-clockwise\n\n" +
+                        "🖱️ Left Click: Rotate wire clockwise\n\n" +
                         "🎯 Goal: Connect all PCs to the power source!\n" +
                         "Rotate the network wires to complete the connections.\n\n" +
                         "Good luck! 🍀"
@@ -225,7 +224,25 @@ public class NetsGame extends Application {
         ));
         helpButton.setOnAction(e -> showHelp());
 
-        controls.getChildren().addAll(newGameButton, resetButton, helpButton);
+        ToggleButton solutionButton = new ToggleButton("Show Solution");
+        String solutionButtonStyle = "-fx-background-color: #ffc107; -fx-text-fill: black; -fx-font-size: 14px; -fx-padding: 10 20; -fx-cursor: hand; -fx-background-radius: 5;";
+        String solutionButtonHoverStyle = "-fx-background-color: #ffca2c; -fx-text-fill: black; -fx-font-size: 14px; -fx-padding: 10 20; -fx-cursor: hand; -fx-background-radius: 5;";
+        solutionButton.setStyle(solutionButtonStyle);
+        solutionButton.setOnMouseEntered(e -> { if (!solutionButton.isSelected()) solutionButton.setStyle(solutionButtonHoverStyle); });
+        solutionButton.setOnMouseExited(e -> { if (!solutionButton.isSelected()) solutionButton.setStyle(solutionButtonStyle); });
+        solutionButton.setOnAction(e -> {
+            boolean isSelected = solutionButton.isSelected();
+            if (controller != null) {
+                controller.toggleSolution(isSelected);
+            }
+            if (isSelected) {
+                solutionButton.setStyle(solutionButtonHoverStyle); // Keep hover style when selected
+            } else {
+                solutionButton.setStyle(solutionButtonStyle);
+            }
+        });
+
+        controls.getChildren().addAll(newGameButton, resetButton, helpButton, solutionButton);
         return controls;
     }
 
@@ -253,7 +270,6 @@ public class NetsGame extends Application {
         Label controls = new Label(
                 "🖱️ Controls:\n" +
                         "• Left Click: Rotate network wire clockwise (90°)\n" +
-                        "• Right Click: Rotate network wire counter-clockwise (-90°)\n" +
                         "• Locked tiles (power source with lock icon) cannot be rotated"
         );
 

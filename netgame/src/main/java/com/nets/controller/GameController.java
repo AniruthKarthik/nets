@@ -15,6 +15,7 @@ import java.util.*;
 public class GameController {
     private GameBoard gameBoard;
     private GameState gameState;
+    private Tile[][] solvedGrid; // To store the solved state
 
     public GameController(GameBoard gameBoard) {
         this.gameBoard = gameBoard;
@@ -52,6 +53,18 @@ public class GameController {
             grid = generateGrid(rows, cols);
         } while (!validateGeneratedGrid(grid));
 
+        // Deep copy the solved grid before scrambling
+        this.solvedGrid = new Tile[rows][cols];
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                Tile original = grid[r][c];
+                Tile copy = new Tile(original.getType(), original.getRotation(), original.isLocked());
+                copy.setConnections(original.getConnections()); // Shallow copy of connections is ok here
+                this.solvedGrid[r][c] = copy;
+            }
+        }
+
+
         // 3. Scramble the puzzle (except POWER and EMPTY)
         Random rand = new Random();
         for (int r = 0; r < rows; r++) {
@@ -79,6 +92,18 @@ public class GameController {
         return state;
     }
 
+    public void toggleSolution(boolean show) {
+        Tile[][] gridToShow = show ? this.solvedGrid : this.gameState.getGrid();
+        
+        if (gridToShow == null) return; // Solution not generated yet
+
+        for (int r = 0; r < gridToShow.length; r++) {
+            for (int c = 0; c < gridToShow[0].length; c++) {
+                gameBoard.getTileView(r, c).updateTile(gridToShow[r][c]);
+            }
+        }
+    }
+    
     private Tile[][] generateGrid(int rows, int cols) {
         // 1. Generate a Spanning Tree starting from the center POWER tile
         Tile[][] grid = new Tile[rows][cols];
@@ -209,9 +234,8 @@ public class GameController {
                             gameState.getMeta().getStatus().equals("PLAYING")) {
 
                         Tile tile = tileView.getTile();
-                        if (!tile.isLocked()) {
-                            int rotation = event.getButton() == MouseButton.PRIMARY ? 90 : -90;
-                            handleHumanMove(tileView.getRow(), tileView.getCol(), rotation);
+                        if (!tile.isLocked() && event.getButton() == MouseButton.PRIMARY) {
+                            handleHumanMove(tileView.getRow(), tileView.getCol(), 90);
                         }
                     }
                 });
@@ -282,51 +306,59 @@ public class GameController {
         }
     }
 
+    private com.google.gson.JsonObject invokeCppEngine(String action) throws IOException, InterruptedException {
+        Gson gson = new GsonBuilder().create();
+
+        // Create the request object
+        com.google.gson.JsonObject request = new com.google.gson.JsonObject();
+        request.addProperty("action", action);
+        request.add("gameState", gson.toJsonTree(gameState));
+
+        // Locate C++ engine
+        File engineExe = new File("..", "nets_engine.exe");
+        if (!engineExe.exists()) {
+            engineExe = new File("nets_engine.exe");
+        }
+        
+        if (!engineExe.exists()) {
+             throw new FileNotFoundException("Could not find nets_engine.exe at " + new File("..", "nets_engine.exe").getAbsolutePath() + " or " + new File("nets_engine.exe").getAbsolutePath());
+        }
+
+        // Call C++ engine
+        ProcessBuilder pb = new ProcessBuilder(engineExe.getCanonicalPath());
+        Process process = pb.start();
+
+        // Write request to stdin
+        try (OutputStreamWriter writer = new OutputStreamWriter(process.getOutputStream())) {
+            gson.toJson(request, writer);
+        }
+
+        // Read response from stdout
+        StringBuilder output = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line);
+            }
+        }
+
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+             // Try reading stderr if failed
+             try (BufferedReader errReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+                String line;
+                while((line = errReader.readLine()) != null) System.err.println("CPP Error: " + line);
+             }
+             throw new RuntimeException("C++ engine exited with code " + exitCode);
+        }
+
+        return gson.fromJson(output.toString(), com.google.gson.JsonObject.class);
+    }
+
     private void performStandaloneCpuMove() {
         try {
-            Gson gson = new GsonBuilder().create();
-            
-            // Locate C++ engine
-            File engineExe = new File("..", "nets_engine.exe");
-            if (!engineExe.exists()) {
-                engineExe = new File("nets_engine.exe");
-            }
-            
-            if (!engineExe.exists()) {
-                 throw new FileNotFoundException("Could not find nets_engine.exe at " + new File("..", "nets_engine.exe").getAbsolutePath() + " or " + new File("nets_engine.exe").getAbsolutePath());
-            }
+            com.google.gson.JsonObject response = invokeCppEngine("get_cpu_move");
 
-            // Call C++ engine
-            ProcessBuilder pb = new ProcessBuilder(engineExe.getCanonicalPath());
-            // pb.directory(new File(".")); // Inherit current working directory
-            Process process = pb.start();
-
-            // Write current state to stdin
-            try (OutputStreamWriter writer = new OutputStreamWriter(process.getOutputStream())) {
-                gson.toJson(gameState, writer);
-            }
-
-            // Read response from stdout
-            StringBuilder output = new StringBuilder();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    output.append(line);
-                }
-            }
-
-            int exitCode = process.waitFor();
-            if (exitCode != 0) {
-                 // Try reading stderr if failed
-                 try (BufferedReader errReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
-                    String line;
-                    while((line = errReader.readLine()) != null) System.err.println("CPP Error: " + line);
-                 }
-                 throw new RuntimeException("C++ engine exited with code " + exitCode);
-            }
-
-            // Parse response: { "move": { "row": ..., "col": ..., "rotation": ... } }
-            com.google.gson.JsonObject response = gson.fromJson(output.toString(), com.google.gson.JsonObject.class);
             if (response != null && response.has("move")) {
                 com.google.gson.JsonObject moveObj = response.getAsJsonObject("move");
                 int r = moveObj.get("row").getAsInt();
@@ -343,7 +375,7 @@ public class GameController {
                 updateStats();
                 updatePoweredStatus();
             } else {
-                System.err.println("Invalid response from CPU: " + output);
+                System.err.println("Invalid response from CPU: " + (response != null ? response.toString() : "null"));
             }
 
             // Update UI
@@ -372,11 +404,23 @@ public class GameController {
     }
 
     private void updateStats() {
-        Tile[][] grid = gameState.getGrid();
-        Stats stats = gameState.getStats();
-        stats.setComponents(calculateComponents(grid));
-        stats.setLooseEnds(calculateLooseEnds(grid));
-        stats.setSolved(checkWinCondition());
+        try {
+            com.google.gson.JsonObject response = invokeCppEngine("get_stats");
+            if (response != null && response.has("stats")) {
+                com.google.gson.JsonObject statsObj = response.getAsJsonObject("stats");
+                int components = statsObj.get("components").getAsInt();
+                int looseEnds = statsObj.get("looseEnds").getAsInt();
+                boolean solved = statsObj.get("solved").getAsBoolean();
+
+                Stats stats = gameState.getStats();
+                stats.setComponents(components);
+                stats.setLooseEnds(looseEnds);
+                stats.setSolved(solved); // This is the 'mathematical' solved state
+            }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+            showError("Error getting stats from C++ engine: " + e.getMessage());
+        }
     }
 
     private int calculateLooseEnds(Tile[][] grid) {
@@ -546,37 +590,31 @@ public class GameController {
                 else if (rot == 180) { conn[2] = true; }
                 else { conn[3] = true; }
                 break;
-            case POWER:
-            case CROSS:
-                // Power and Cross behave as 4-way junctions.
-                conn[0] = conn[1] = conn[2] = conn[3] = true;
-                break;
         }
 
         return conn;
     }
 
     private boolean checkWinCondition() {
-        Tile[][] grid = gameState.getGrid();
-        int rows = grid.length;
-        int cols = grid[0].length;
-
-        // 1. Check loose ends and components
-        if (calculateLooseEnds(grid) != 0 || calculateComponents(grid) != 1) {
+        // The 'solved' status from C++ engine checks for components, loose ends, and loops.
+        boolean isMathematicallySolved = gameState.getStats().isSolved();
+        if (!isMathematicallySolved) {
             return false;
         }
 
-        // 2. Check if all PCs and non-EMPTY tiles are powered
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
+        // Additionally, for the win condition, all non-empty tiles must be powered.
+        Tile[][] grid = gameState.getGrid();
+        for (int i = 0; i < grid.length; i++) {
+            for (int j = 0; j < grid[0].length; j++) {
                 Tile tile = grid[i][j];
                 if (tile.getType() == TileType.EMPTY) continue;
                 
                 if (!tile.isPowered()) {
-                    return false;
+                    return false; // Found a non-empty, unpowered tile.
                 }
             }
         }
+        
         return true;
     }
 
@@ -589,10 +627,17 @@ public class GameController {
     }
 
     private void showWinMessage() {
+        String winner = "Unknown";
+        if (gameState.getLastMove() != null) {
+            winner = "HUMAN".equalsIgnoreCase(gameState.getLastMove().getActor()) ? "You (Human)" : "CPU";
+        }
+
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Victory!");
         alert.setHeaderText("🎉 Congratulations! 🎉");
-        alert.setContentText("You've successfully connected all PCs to the power source!\n\nAll tiles are connected in a single network.");
+        alert.setContentText("Winner: " + winner + "!\n\n" +
+                "You've successfully connected all PCs to the power source!\n\n" +
+                "All tiles are connected in a single network.");
         alert.showAndWait();
     }
 
