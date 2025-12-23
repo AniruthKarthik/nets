@@ -53,10 +53,18 @@ int main(int argc, char* argv[]) {
             }
         }
 
+        pair<int, int> lastMovedTile = {-1, -1};
+        if (inputJson.contains("lastMove") && !inputJson["lastMove"].is_null()) {
+             auto moveJson = inputJson["lastMove"];
+             if (moveJson.contains("row") && moveJson.contains("col")) {
+                lastMovedTile = {moveJson["row"].get<int>(), moveJson["col"].get<int>()};
+             }
+        }
+
         json response;
 
         if (action == "get_cpu_move") {
-            Move bestMove = chooseBestMove(state.board);
+            Move bestMove = chooseBestMove(state.board, lastMovedTile);
             response["move"] = {
                 {"row", bestMove.x},
                 {"col", bestMove.y},

@@ -11,11 +11,15 @@ using namespace std;
 
 // Implementations
 
-inline vector<Move> generateMoves(const Board &board) {
+inline vector<Move> generateMoves(const Board &board, pair<int, int> lastMovedTile) {
   vector<Move> moves;
 
   for (int i = 0; i < board.height; i++) {
     for (int j = 0; j < board.width; j++) {
+      if (i == lastMovedTile.first && j == lastMovedTile.second) {
+          continue;
+      }
+
       if (board.at(i, j).type == EMPTY) continue;
       
       // Only generate moves for non-locked tiles.
@@ -40,9 +44,12 @@ inline int evaluateBoard(const Board &board) {
   return score;
 }
 
-inline Move chooseBestMove(const Board &board) {
-  vector<Move> moves = generateMoves(board);
-  if (moves.empty()) return {0,0,0}; 
+inline Move chooseBestMove(const Board &board, pair<int, int> lastMovedTile) {
+  vector<Move> moves = generateMoves(board, lastMovedTile);
+  if (moves.empty()) {
+      moves = generateMoves(board, {-1, -1});
+      if(moves.empty()) return {0,0,0}; 
+  }
 
   int bestScore = INT_MAX;
   Move bestMove = moves[0];
