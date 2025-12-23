@@ -6,13 +6,15 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#include <set>
+#include <utility>
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 
 // Implementation
 
-inline void exportGameState(const GameState& state, const std::string& filename) {
+inline void exportGameState(const GameState& state, const std::string& filename, const std::set<std::pair<int, int>>& poweredTiles = {}) {
     json j;
 
     j["meta"] = {
@@ -55,10 +57,12 @@ inline void exportGameState(const GameState& state, const std::string& filename)
         json row = json::array();
         for (int c = 0; c < state.board.width; ++c) {
             const Tile& t = state.board.at(r, c);
+            bool isPowered = poweredTiles.count({r, c}) > 0;
             row.push_back({
                 {"type", tileTypeToString(t.type)},
                 {"rotation", t.rotation},
-                {"locked", t.locked}
+                {"locked", t.locked},
+                {"isPowered", isPowered}
             });
         }
         grid.push_back(row);

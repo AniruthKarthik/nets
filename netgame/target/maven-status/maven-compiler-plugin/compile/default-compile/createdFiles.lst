@@ -1,15 +1,1 @@
-com\nets\model\GameState.class
-com\nets\model\TileType.class
-com\nets\NetsGame.class
-com\nets\view\TileView.class
-com\nets\model\Tile.class
-com\nets\Launcher.class
-com\nets\controller\GameController.class
-com\nets\controller\GameController$1.class
 module-info.class
-com\nets\model\Meta.class
-com\nets\model\Rules.class
-com\nets\view\TileView$1.class
-com\nets\model\Move.class
-com\nets\model\Stats.class
-com\nets\view\GameBoard.class

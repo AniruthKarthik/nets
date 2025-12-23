@@ -60,9 +60,16 @@ int main(int argc, char* argv[]) {
              }
         }
 
-        // 4. Export
+        // 4. Calculate Powered Status (for Visualization)
+        set<pair<int, int>> poweredTiles;
+        if (state.board.powerTile.first != -1) {
+             Graph graph = buildGraph(state.board);
+             dfs(graph, state.board.powerTile, poweredTiles);
+        }
+
+        // 5. Export
         // cout << "Saving state to " << outputFile << "..." << endl;
-        exportGameState(state, outputFile);
+        exportGameState(state, outputFile, poweredTiles);
 
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;

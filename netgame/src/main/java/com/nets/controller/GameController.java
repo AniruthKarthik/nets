@@ -1,5 +1,7 @@
 package com.nets.controller;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.nets.model.*;
 import com.nets.view.GameBoard;
 import com.nets.view.TileView;
@@ -7,26 +9,79 @@ import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.input.MouseButton;
 
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 public class GameController {
     private GameBoard gameBoard;
     private GameState gameState;
+    private final Gson gson;
+    private static final String JSON_FILE = "../json/board_state.jsonc";
+    private static final String ENGINE_PATH = "../nets_engine";
 
     public GameController(GameBoard gameBoard) {
         this.gameBoard = gameBoard;
+        this.gson = new GsonBuilder().setPrettyPrinting().create();
     }
 
     public void initGame(int rows, int cols) {
         try {
-            // Create new game state
+            // 1. Generate initial state in Java (as requested, keeping generation in Java)
             gameState = createNewGameState(rows, cols);
+            
+            // 2. Save state to JSON
+            saveGameState(gameState);
+
+            // 3. Run Engine (to get initial stats and powered status)
+            runEngine();
+
+            // 4. Load state back
+            gameState = loadGameState();
+
+            // 5. Update UI
             gameBoard.loadGameState(gameState);
             setupEventHandlers();
-            updatePoweredStatus();
+
         } catch (Exception e) {
             showError("Failed to initialize game: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    private void saveGameState(GameState state) throws IOException {
+        try (Writer writer = new FileWriter(JSON_FILE)) {
+            gson.toJson(state, writer);
+        }
+    }
+
+    private GameState loadGameState() throws IOException {
+        // Read the entire file content into a String first to handle potential closing issues
+        String content = new String(Files.readAllBytes(Paths.get(JSON_FILE)));
+        return gson.fromJson(content, GameState.class);
+    }
+
+    private void runEngine() throws IOException, InterruptedException {
+        ProcessBuilder pb = new ProcessBuilder(ENGINE_PATH, JSON_FILE, JSON_FILE);
+        // Ensure the engine runs in the correct directory (root of the project, or consistent with relative paths)
+        // Java runs in netgame/ so ../ is root.
+        // We can set directory to root.
+        pb.directory(new File("..")); // Set working directory to project root
+        
+        // Wait, if I set directory to "..", then "nets_engine" (command) should be "./nets_engine"
+        // and arguments "json/board_state.jsonc".
+        // Let's adjust.
+        pb.command("./nets_engine", "json/board_state.jsonc", "json/board_state.jsonc");
+        
+        Process process = pb.start();
+        int exitCode = process.waitFor();
+        
+        if (exitCode != 0) {
+            // Read error stream
+            String error = new String(process.getErrorStream().readAllBytes());
+            throw new IOException("Engine failed with code " + exitCode + ": " + error);
         }
     }
 
@@ -87,10 +142,10 @@ public class GameController {
 
         state.setGrid(grid);
 
-        // Initialize stats
+        // Initialize stats (dummy values, engine will calculate real ones)
         Stats stats = new Stats();
-        stats.setComponents(calculateComponents(grid));
-        stats.setLooseEnds(calculateLooseEnds(grid));
+        stats.setComponents(0);
+        stats.setLooseEnds(0);
         stats.setSolved(false);
         state.setStats(stats);
 
@@ -106,6 +161,9 @@ public class GameController {
         rotationRules.put("EMPTY", new int[]{});
         rules.setRotationRules(rotationRules);
         state.setRules(rules);
+        
+        // Initialize Last Move
+        state.setLastMove(new Move("HUMAN", -1, -1, 0));
 
         return state;
     }
@@ -148,301 +206,88 @@ public class GameController {
 
     private void handleHumanMove(int row, int col, int rotation) {
         try {
-            // Update local state
+            // 1. Update local state
             Tile tile = gameState.getGrid()[row][col];
             tile.rotate(rotation);
 
-            // Update move
+            // 2. Set Move Info
             Move move = new Move("HUMAN", row, col, tile.getRotation());
             gameState.setLastMove(move);
+            gameState.getMeta().setTurn("HUMAN"); // Ensure turn is HUMAN
 
-            // Recalculate stats and powered status
-            updateStats();
-            updatePoweredStatus();
+            // 3. Save, Run Engine (Analyze), Load
+            saveGameState(gameState);
+            runEngine();
+            gameState = loadGameState();
 
-            // Update UI
-            for (int i = 0; i < gameState.getMeta().getHeight(); i++) {
-                for (int j = 0; j < gameState.getMeta().getWidth(); j++) {
-                    gameBoard.getTileView(i, j).updateTile(gameState.getGrid()[i][j]);
-                }
-            }
-            gameBoard.updateUI();
+            // 4. Update UI with new stats/powered status
+            updateUI();
 
-            // Check if solved
-            if (checkWinCondition()) {
-                gameState.getMeta().setStatus("SOLVED");
-                gameBoard.updateUI();
-                showWinMessage();
+            // 5. Check Win
+            if (gameState.getStats().isSolved()) {
+                handleWin();
                 return;
             }
 
-            // Switch to CPU turn
+            // 6. CPU Turn
+            // Trigger CPU turn with delay
             gameState.getMeta().setTurn("CPU");
-            gameBoard.updateUI();
+            updateUI(); // Show that it's CPU turn (if UI supports it) or just wait
 
-            // Execute CPU turn
-            new Thread(() -> {
+            CompletableFuture.runAsync(() -> {
                 try {
-                    Thread.sleep(500); // Small delay for visual effect
-                    Platform.runLater(this::performStandaloneCpuMove);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+                    Thread.sleep(500); // Visual delay
+                    
+                    // Save (with Turn=CPU)
+                    saveGameState(gameState);
+                    
+                    // Run Engine (Executes CPU Move)
+                    runEngine();
+                    
+                    Platform.runLater(() -> {
+                        try {
+                            // Load result
+                            gameState = loadGameState();
+                            updateUI();
+                            
+                            if (gameState.getStats().isSolved()) {
+                                handleWin();
+                            } else {
+                                // Ensure turn is back to HUMAN (Engine should set it, but safety check)
+                                if (!gameState.getStats().isSolved()) {
+                                    gameState.getMeta().setTurn("HUMAN");
+                                    // Actually engine sets it to HUMAN after move.
+                                }
+                            }
+                        } catch (IOException e) {
+                            showError("Error loading CPU move: " + e.getMessage());
+                        }
+                    });
+                    
+                } catch (Exception e) {
+                    Platform.runLater(() -> showError("Error during CPU turn: " + e.getMessage()));
                 }
-            }).start();
+            });
 
         } catch (Exception e) {
             showError("Error processing move: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
-    private void performStandaloneCpuMove() {
-        // Simple CPU AI: find best move based on reducing loose ends
-        List<int[]> possibleMoves = new ArrayList<>();
-        Tile[][] grid = gameState.getGrid();
-
-        for (int row = 0; row < grid.length; row++) {
-            for (int col = 0; col < grid[row].length; col++) {
-                if (!grid[row][col].isLocked()) {
-                    possibleMoves.add(new int[]{row, col});
-                }
+    private void updateUI() {
+        for (int i = 0; i < gameState.getMeta().getHeight(); i++) {
+            for (int j = 0; j < gameState.getMeta().getWidth(); j++) {
+                gameBoard.getTileView(i, j).updateTile(gameState.getGrid()[i][j]);
             }
         }
-
-        if (possibleMoves.isEmpty()) {
-            gameState.getMeta().setTurn("HUMAN");
-            gameBoard.updateUI();
-            return;
-        }
-
-        // Evaluate each possible move
-        int bestRow = -1, bestCol = -1, bestRotation = 0;
-        int bestScore = Integer.MAX_VALUE;
-
-        for (int[] move : possibleMoves) {
-            int row = move[0];
-            int col = move[1];
-            Tile tile = grid[row][col];
-            int originalRotation = tile.getRotation();
-
-            // Try all possible rotations
-            for (int rotation : new int[]{90, 180, 270}) {
-                tile.setRotation((originalRotation + rotation) % 360);
-                int score = calculateLooseEnds(grid);
-
-                if (score < bestScore) {
-                    bestScore = score;
-                    bestRow = row;
-                    bestCol = col;
-                    bestRotation = (originalRotation + rotation) % 360;
-                }
-            }
-
-            // Restore original rotation
-            tile.setRotation(originalRotation);
-        }
-
-        // Apply best move
-        if (bestRow != -1) {
-            Tile tile = grid[bestRow][bestCol];
-            tile.setRotation(bestRotation);
-
-            Move move = new Move("CPU", bestRow, bestCol, bestRotation);
-            gameState.setLastMove(move);
-
-            // Update stats
-            updateStats();
-            updatePoweredStatus();
-
-
-            // Update UI
-            for (int i = 0; i < gameState.getMeta().getHeight(); i++) {
-                for (int j = 0; j < gameState.getMeta().getWidth(); j++) {
-                    gameBoard.getTileView(i, j).updateTile(gameState.getGrid()[i][j]);
-                }
-            }
-        }
-
-        // Switch back to human
-        gameState.getMeta().setTurn("HUMAN");
         gameBoard.updateUI();
-
-        checkAndHandleWin();
     }
 
-    private void updateStats() {
-        Tile[][] grid = gameState.getGrid();
-        Stats stats = gameState.getStats();
-        stats.setComponents(calculateComponents(grid));
-        stats.setLooseEnds(calculateLooseEnds(grid));
-        stats.setSolved(checkWinCondition());
-    }
-
-    private int calculateLooseEnds(Tile[][] grid) {
-        int looseEnds = 0;
-        int rows = grid.length;
-        int cols = grid[0].length;
-
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                Tile tile = grid[i][j];
-                if (tile.getType() == TileType.EMPTY) continue;
-
-                boolean[] connections = getConnections(tile);
-
-                // Check each direction
-                for (int dir = 0; dir < 4; dir++) {
-                    if (connections[dir]) {
-                        int ni = i + (dir == 0 ? -1 : dir == 2 ? 1 : 0);
-                        int nj = j + (dir == 1 ? 1 : dir == 3 ? -1 : 0);
-
-                        if (ni < 0 || ni >= rows || nj < 0 || nj >= cols) {
-                            looseEnds++;
-                        } else {
-                            Tile neighbor = grid[ni][nj];
-                            boolean[] neighborConn = getConnections(neighbor);
-                            int oppositeDir = (dir + 2) % 4;
-
-                            if (!neighborConn[oppositeDir]) {
-                                looseEnds++;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return looseEnds / 2; // Each loose end counted twice
-    }
-
-    private int calculateComponents(Tile[][] grid) {
-        int rows = grid.length;
-        int cols = grid[0].length;
-        boolean[][] visited = new boolean[rows][cols];
-        int components = 0;
-
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                if (!visited[i][j] && grid[i][j].getType() != TileType.EMPTY) {
-                    dfs(grid, visited, i, j, null);
-                    components++;
-                }
-            }
-        }
-
-        return components;
-    }
-
-    private void dfs(Tile[][] grid, boolean[][] visited, int i, int j, Set<Tile> poweredSet) {
-        if (i < 0 || i >= grid.length || j < 0 || j >= grid[0].length) return;
-        if (visited[i][j] || grid[i][j].getType() == TileType.EMPTY) return;
-
-        visited[i][j] = true;
-        if (poweredSet != null) {
-            poweredSet.add(grid[i][j]);
-        }
-        boolean[] connections = getConnections(grid[i][j]);
-
-        int[][] dirs = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
-        for (int d = 0; d < 4; d++) {
-            if (connections[d]) {
-                int ni = i + dirs[d][0];
-                int nj = j + dirs[d][1];
-
-                if (ni >= 0 && ni < grid.length && nj >= 0 && nj < grid[0].length) {
-                    Tile neighbor = grid[ni][nj];
-                    boolean[] neighborConn = getConnections(neighbor);
-                    if (neighborConn[(d + 2) % 4]) {
-                        dfs(grid, visited, ni, nj, poweredSet);
-                    }
-                }
-            }
-        }
-    }
-
-    private void updatePoweredStatus() {
-        Tile[][] grid = gameState.getGrid();
-        int rows = grid.length;
-        int cols = grid[0].length;
-
-        // Reset all tiles to unpowered
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                grid[i][j].setPowered(false);
-            }
-        }
-
-        // Find power source
-        int powerRow = -1, powerCol = -1;
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                if (grid[i][j].getType() == TileType.POWER) {
-                    powerRow = i;
-                    powerCol = j;
-                    break;
-                }
-            }
-        }
-
-        if (powerRow != -1) {
-            // Traverse from power source to find all connected tiles
-            Set<Tile> poweredSet = new HashSet<>();
-            boolean[][] visited = new boolean[rows][cols];
-            dfs(grid, visited, powerRow, powerCol, poweredSet);
-            for(Tile t: poweredSet) {
-                t.setPowered(true);
-            }
-        }
-    }
-
-
-    private boolean[] getConnections(Tile tile) {
-        // Returns [top, right, bottom, left]
-        boolean[] conn = new boolean[4];
-        int rot = tile.getRotation();
-
-        switch (tile.getType()) {
-            case STRAIGHT:
-                conn[0] = conn[2] = (rot % 180 == 0);
-                conn[1] = conn[3] = (rot % 180 != 0);
-                break;
-            case CORNER:
-                if (rot == 0) { conn[0] = conn[1] = true; }
-                else if (rot == 90) { conn[1] = conn[2] = true; }
-                else if (rot == 180) { conn[2] = conn[3] = true; }
-                else { conn[3] = conn[0] = true; }
-                break;
-            case T_JUNCTION:
-                if (rot == 0) { conn[0] = conn[1] = conn[3] = true; }
-                else if (rot == 90) { conn[0] = conn[1] = conn[2] = true; }
-                else if (rot == 180) { conn[1] = conn[2] = conn[3] = true; }
-                else { conn[0] = conn[2] = conn[3] = true; }
-                break;
-            case PC:
-                // PC has single connection point that rotates
-                if (rot == 0) { conn[0] = true; }      // Top
-                else if (rot == 90) { conn[1] = true; }  // Right
-                else if (rot == 180) { conn[2] = true; } // Bottom
-                else { conn[3] = true; }                 // Left
-                break;
-            case POWER:
-                // Power source doesn't have connections (it's the source)
-                break;
-        }
-
-        return conn;
-    }
-
-    private boolean checkWinCondition() {
-        Stats stats = gameState.getStats();
-        return stats.getLooseEnds() == 0 && stats.getComponents() == 1;
-    }
-
-    private void checkAndHandleWin() {
-        if (checkWinCondition()) {
-            gameState.getMeta().setStatus("SOLVED");
-            gameBoard.updateUI();
-            showWinMessage();
-        }
+    private void handleWin() {
+        gameState.getMeta().setStatus("SOLVED");
+        updateUI();
+        showWinMessage();
     }
 
     private void showWinMessage() {

@@ -2,68 +2,177 @@
   "grid": [
     [
       {
+        "isPowered": false,
+        "locked": false,
+        "rotation": 180,
+        "type": "CORNER"
+      },
+      {
+        "isPowered": false,
         "locked": false,
         "rotation": 0,
         "type": "CORNER"
       },
       {
+        "isPowered": false,
         "locked": false,
         "rotation": 90,
         "type": "T_JUNCTION"
       },
       {
-        "locked": true,
-        "rotation": 0,
-        "type": "STRAIGHT"
-      }
-    ],
-    [
-      {
-        "locked": false,
-        "rotation": 90,
-        "type": "STRAIGHT"
-      },
-      {
-        "locked": false,
-        "rotation": 0,
-        "type": "CROSS"
-      },
-      {
+        "isPowered": false,
         "locked": false,
         "rotation": 270,
+        "type": "STRAIGHT"
+      },
+      {
+        "isPowered": false,
+        "locked": false,
+        "rotation": 180,
         "type": "PC"
       }
     ],
     [
       {
-        "locked": true,
-        "rotation": 0,
-        "type": "EMPTY"
+        "isPowered": false,
+        "locked": false,
+        "rotation": 180,
+        "type": "PC"
       },
       {
+        "isPowered": false,
+        "locked": false,
+        "rotation": 90,
+        "type": "T_JUNCTION"
+      },
+      {
+        "isPowered": false,
+        "locked": false,
+        "rotation": 0,
+        "type": "CORNER"
+      },
+      {
+        "isPowered": false,
+        "locked": false,
+        "rotation": 90,
+        "type": "PC"
+      },
+      {
+        "isPowered": false,
+        "locked": false,
+        "rotation": 180,
+        "type": "PC"
+      }
+    ],
+    [
+      {
+        "isPowered": false,
+        "locked": false,
+        "rotation": 270,
+        "type": "T_JUNCTION"
+      },
+      {
+        "isPowered": false,
+        "locked": false,
+        "rotation": 180,
+        "type": "STRAIGHT"
+      },
+      {
+        "isPowered": false,
+        "locked": false,
+        "rotation": 90,
+        "type": "T_JUNCTION"
+      },
+      {
+        "isPowered": false,
+        "locked": false,
+        "rotation": 270,
+        "type": "PC"
+      },
+      {
+        "isPowered": false,
+        "locked": false,
+        "rotation": 90,
+        "type": "CORNER"
+      }
+    ],
+    [
+      {
+        "isPowered": false,
+        "locked": false,
+        "rotation": 180,
+        "type": "PC"
+      },
+      {
+        "isPowered": false,
+        "locked": false,
+        "rotation": 180,
+        "type": "CORNER"
+      },
+      {
+        "isPowered": false,
+        "locked": false,
+        "rotation": 270,
+        "type": "STRAIGHT"
+      },
+      {
+        "isPowered": true,
+        "locked": false,
+        "rotation": 180,
+        "type": "STRAIGHT"
+      },
+      {
+        "isPowered": false,
+        "locked": false,
+        "rotation": 0,
+        "type": "T_JUNCTION"
+      }
+    ],
+    [
+      {
+        "isPowered": false,
+        "locked": false,
+        "rotation": 180,
+        "type": "CORNER"
+      },
+      {
+        "isPowered": false,
+        "locked": false,
+        "rotation": 0,
+        "type": "STRAIGHT"
+      },
+      {
+        "isPowered": true,
+        "locked": false,
+        "rotation": 180,
+        "type": "T_JUNCTION"
+      },
+      {
+        "isPowered": true,
         "locked": true,
         "rotation": 0,
         "type": "POWER"
       },
       {
+        "isPowered": false,
         "locked": false,
         "rotation": 180,
-        "type": "CORNER"
+        "type": "PC"
       }
     ]
   ],
   "last_move": {
-    "actor": "CPU",
-    "col": 1,
-    "rotation": 90,
-    "row": 0
+    "actor": "HUMAN",
+    "col": -1,
+    "rotation": 0,
+    "row": -1
   },
   "meta": {
-    "height": 3,
+    "height": 5,
     "seed": 0,
     "status": "PLAYING",
     "turn": "HUMAN",
-    "width": 3,
+    "width": 5,
     "wraps": false
   },
   "rules": {
@@ -101,8 +210,8 @@
     }
   },
   "stats": {
-    "components": 3,
+    "components": 16,
     "is_solved": false,
-    "loose_ends": 10
+    "loose_ends": 31
   }
 }
