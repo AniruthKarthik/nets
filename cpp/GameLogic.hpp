@@ -7,7 +7,7 @@
 
 inline void applyMove(Board &board, const Move &move) {
   Tile &tile = board.grid[move.x][move.y];
-  tile.rotation = (tile.rotation + move.rotation) % 360;
+  tile.rotation = move.rotation;
 }
 
 #endif // GAME_LOGIC_HPP

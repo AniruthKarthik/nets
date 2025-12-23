@@ -4,7 +4,7 @@
 #include "JsonUtils.hpp"
 #include <string>
 #include <fstream>
-#include <nlohmann/json.hpp>
+#include "nlohmann/json.hpp"
 
 using json = nlohmann::json;
 
@@ -41,6 +41,10 @@ inline GameState importGameState(const std::string& filename) {
             int rotation = tObj["rotation"];
             bool locked = tObj.contains("locked") ? tObj["locked"].get<bool>() : false;
             state.board.grid[r][c] = Tile(type, rotation, locked);
+            
+            if (tObj.contains("connections")) {
+                state.board.grid[r][c].customConnections = tObj["connections"].get<vector<bool>>();
+            }
             
             if (type == POWER) {
                 state.board.powerTile = {r, c};

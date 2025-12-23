@@ -15,57 +15,60 @@
 using namespace std;
 
 int main(int argc, char* argv[]) {
-    string inputFile = "json/board_state.jsonc";
-    string outputFile = "json/board_state.jsonc";
-
-    if (argc > 1) inputFile = argv[1];
-    if (argc > 2) outputFile = argv[2];
-
     try {
-        // 1. Import
-        // cout << "Loading state from " << inputFile << "..." << endl;
-        GameState state = importGameState(inputFile);
-
-        // 2. Analysis
-        state.looseEnds = countLooseEnds(state.board);
-        state.components = countComponents(state.board);
-        state.isSolved = isSolved(state.board);
-
-        // cout << "Analysis: " << state.looseEnds << " loose ends, " 
-        //      << state.components << " components. Solved: " << (state.isSolved ? "Yes" : "No") << endl;
-
-        // 3. Strategy (CPU Turn)
-        if (state.turn == CPU && !state.isSolved && state.status == PLAYING) {
-            //  cout << "CPU executing move..." << endl;
-             Move bestMove = chooseBestMove(state.board);
-             
-            //  cout << "Applying move: (" << bestMove.x << ", " << bestMove.y << ") rotate " << bestMove.rotation << endl;
-             applyMove(state.board, bestMove);
-             
-             state.lastMove.actor = CPU;
-             state.lastMove.row = bestMove.x;
-             state.lastMove.col = bestMove.y;
-             state.lastMove.rotation = bestMove.rotation;
-
-             state.turn = HUMAN; 
-
-             // Re-evaluate
-             state.looseEnds = countLooseEnds(state.board);
-             state.components = countComponents(state.board);
-             state.isSolved = isSolved(state.board);
-             
-             if (state.isSolved) {
-                 state.status = WON;
-                //  cout << "Puzzle Solved by CPU!" << endl;
-             }
+        json inputJson;
+        if (argc > 1) {
+            string inputFile = argv[1];
+            ifstream i(inputFile);
+            inputJson = json::parse(i);
+        } else {
+            inputJson = json::parse(cin);
         }
 
-        // 4. Export
-        // cout << "Saving state to " << outputFile << "..." << endl;
-        exportGameState(state, outputFile);
+        int width = inputJson["meta"]["width"];
+        int height = inputJson["meta"]["height"];
+        bool wraps = inputJson["meta"]["wraps"];
+
+        GameState state(width, height, wraps);
+        state.status = stringToStatus(inputJson["meta"]["status"]);
+        state.turn = static_cast<int>(stringToActor(inputJson["meta"]["turn"]));
+        
+        auto gridJson = inputJson["grid"];
+        for (int r = 0; r < height; ++r) {
+            for (int c = 0; c < width; ++c) {
+                auto tObj = gridJson[r][c];
+                TileType type = stringToTileType(tObj["type"]);
+                int rotation = tObj["rotation"];
+                bool locked = tObj.contains("locked") ? tObj["locked"].get<bool>() : false;
+                state.board.grid[r][c] = Tile(type, rotation, locked);
+                
+                if (tObj.contains("connections")) {
+                    state.board.grid[r][c].customConnections = tObj["connections"].get<vector<bool>>();
+                }
+
+                if (type == POWER) state.board.powerTile = {r, c};
+            }
+        }
+
+        // 3. Strategy (CPU Turn)
+        if (state.turn == CPU) { // Force move if it's CPU turn, ignore solved check (controller handles that)
+             Move bestMove = chooseBestMove(state.board);
+             
+             json response;
+             response["move"] = {
+                 {"row", bestMove.x},
+                 {"col", bestMove.y},
+                 {"rotation", bestMove.rotation}
+             };
+             cout << response << endl;
+        } else {
+             cout << "{}" << endl;
+        }
 
     } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+        // Return empty object on error as per constraint, or log to stderr
+        // cerr << "Error: " << e.what() << endl;
+        cout << "{}" << endl;
         return 1;
     }
     return 0;

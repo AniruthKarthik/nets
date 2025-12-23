@@ -43,8 +43,9 @@ inline int countComponents(const Graph &graph)
 	set<pair<int, int>> visited;
 	int components = 0;
 
-	for (auto const &[node, neighbors] : graph.adjList)
+	for (auto const &entry : graph.adjList)
 	{
+		pair<int, int> node = entry.first;
 		if (visited.find(node) == visited.end())
 		{
 			components++;
@@ -152,8 +153,9 @@ inline bool hasClosedLoop(const Graph &graph)
 {
 	set<pair<int, int>> visited;
 
-	for (auto const &[node, neighbors] : graph.adjList)
+	for (auto const &entry : graph.adjList)
 	{
+		pair<int, int> node = entry.first;
 		if (visited.find(node) == visited.end())
 		{
 			if (dfsCycleDetection(graph, node, {-1, -1}, visited))

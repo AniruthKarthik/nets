@@ -30,6 +30,7 @@ struct Tile
 	TileType type;
 	int rotation;
 	bool locked;
+    vector<bool> customConnections;
 
 	Tile() : type(EMPTY), rotation(0), locked(false) {}
 	Tile(TileType t, int r, bool l = false) : type(t), rotation(r), locked(l) {}
@@ -64,6 +65,17 @@ struct Move {
 
 inline vector<Direction> getActivePorts(const Tile &tile)
 {
+    if (!tile.customConnections.empty()) {
+        vector<Direction> rotatedPorts;
+        int shift = tile.rotation / 90;
+        for(int i=0; i<4; ++i) {
+            if(tile.customConnections[i]) {
+                rotatedPorts.push_back(static_cast<Direction>((i + shift) % 4));
+            }
+        }
+        return rotatedPorts;
+    }
+
 	vector<Direction> basePorts;
 
 	switch (tile.type)
@@ -89,7 +101,7 @@ inline vector<Direction> getActivePorts(const Tile &tile)
 		break;
 
 	case T_JUNCTION:
-		basePorts = {NORTH, EAST, WEST};
+		basePorts = {NORTH, EAST, SOUTH};
 		break;
 	}
 
