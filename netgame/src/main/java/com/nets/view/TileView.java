@@ -10,10 +10,10 @@ import javafx.scene.transform.Rotate;
 public class TileView extends Canvas {
     private static final double SIZE = 80;
     private static final double LINE_WIDTH = 6;
-    private static final Color WIRE_COLOR = Color.rgb(255, 215, 0); // Gold
+    private static final Color POWERED_COLOR = Color.rgb(0, 255, 100); // Bright Green - for connected network
+    private static final Color UNPOWERED_COLOR = Color.rgb(255, 200, 0); // Gold/Yellow - for disconnected
     private static final Color BG_COLOR = Color.rgb(40, 40, 60);
     private static final Color LOCKED_COLOR = Color.rgb(60, 60, 80);
-    private static final Color POWER_COLOR = Color.rgb(0, 255, 100);
 
     private Tile tile;
     private int row;
@@ -46,7 +46,9 @@ public class TileView extends Canvas {
         gc.rotate(tile.getRotation());
         gc.translate(-SIZE / 2, -SIZE / 2);
 
-        gc.setStroke(tile.isPowered() ? POWER_COLOR : WIRE_COLOR);
+        // Choose color based on powered status
+        Color wireColor = tile.isPowered() ? POWERED_COLOR : UNPOWERED_COLOR;
+        gc.setStroke(wireColor);
         gc.setLineWidth(LINE_WIDTH);
         gc.setLineCap(javafx.scene.shape.StrokeLineCap.ROUND);
 
@@ -61,7 +63,7 @@ public class TileView extends Canvas {
                 drawTJunction(gc);
                 break;
             case PC:
-                drawPC(gc);
+                drawPC(gc, wireColor);
                 break;
             case POWER:
                 drawPower(gc);
@@ -94,34 +96,45 @@ public class TileView extends Canvas {
     private void drawTJunction(GraphicsContext gc) {
         double center = SIZE / 2;
         // Draw T-shape: top, left, and right (no bottom)
-        gc.strokeLine(center, 0, center, center);  // Top line
+        gc.strokeLine(center, 0, center, center);  // Top line only
         gc.strokeLine(0, center, SIZE, center);     // Horizontal line (left to right)
     }
 
-    private void drawPC(GraphicsContext gc) {
+    private void drawPC(GraphicsContext gc, Color wireColor) {
         double center = SIZE / 2;
-        gc.strokeLine(center, 0, center, SIZE);
 
-        // Draw computer screen
-        gc.setFill(Color.rgb(100, 150, 255));
-        gc.fillRect(center - 15, center - 10, 30, 20);
-        gc.setStroke(Color.WHITE);
+        // Draw wire connection (vertical line from top to center)
+        gc.strokeLine(center, 0, center, center - 10);
+
+        // Draw PC as a filled square (like in reference game)
+        double squareSize = 30;
+        gc.setFill(wireColor);
+        gc.fillRect(center - squareSize/2, center - squareSize/2, squareSize, squareSize);
+
+        // Add border to make it stand out
+        gc.setStroke(wireColor.brighter());
         gc.setLineWidth(2);
-        gc.strokeRect(center - 15, center - 10, 30, 20);
+        gc.strokeRect(center - squareSize/2, center - squareSize/2, squareSize, squareSize);
     }
 
     private void drawPower(GraphicsContext gc) {
         double center = SIZE / 2;
-        // Draw lightning bolt
-        gc.setFill(POWER_COLOR);
-        double[] xPoints = {center, center - 5, center, center + 5};
-        double[] yPoints = {center - 15, center, center, center + 15};
-        gc.fillPolygon(xPoints, yPoints, 4);
 
-        // Draw power circle
-        gc.setStroke(POWER_COLOR);
+        // Draw power as filled square (black/dark)
+        double squareSize = 30;
+        gc.setFill(Color.BLACK);
+        gc.fillRect(center - squareSize/2, center - squareSize/2, squareSize, squareSize);
+
+        // Add bright border
+        gc.setStroke(Color.rgb(255, 255, 0)); // Yellow border for power
         gc.setLineWidth(3);
-        gc.strokeOval(center - 20, center - 20, 40, 40);
+        gc.strokeRect(center - squareSize/2, center - squareSize/2, squareSize, squareSize);
+
+        // Draw lightning bolt symbol inside
+        gc.setFill(Color.rgb(255, 255, 0));
+        double[] xPoints = {center - 3, center - 6, center, center + 3, center + 6, center};
+        double[] yPoints = {center - 8, center - 2, center - 2, center + 8, center + 2, center + 2};
+        gc.fillPolygon(xPoints, yPoints, 6);
     }
 
     public Tile getTile() {

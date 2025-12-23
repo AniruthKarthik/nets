@@ -49,6 +49,7 @@ public class GameController {
         TileType[] types = {TileType.STRAIGHT, TileType.CORNER, TileType.T_JUNCTION};
         int[] rotations = {0, 90, 180, 270};
 
+        // Fill grid with random wire tiles
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
                 TileType type = types[random.nextInt(types.length)];
@@ -62,13 +63,27 @@ public class GameController {
         int powerCol = random.nextInt(cols);
         grid[powerRow][powerCol] = new Tile(TileType.POWER, 0, true);
 
-        // Add PC at different random location
-        int pcRow, pcCol;
-        do {
-            pcRow = random.nextInt(rows);
-            pcCol = random.nextInt(cols);
-        } while (pcRow == powerRow && pcCol == powerCol);
-        grid[pcRow][pcCol] = new Tile(TileType.PC, random.nextInt(4) * 90, false);
+        // Add multiple PCs (25-40% of board should be PCs)
+        int totalTiles = rows * cols;
+        int numPCs = Math.max(3, (int)(totalTiles * 0.3)); // At least 3 PCs, or 30% of tiles
+
+        Set<String> occupiedPositions = new HashSet<>();
+        occupiedPositions.add(powerRow + "," + powerCol); // Power position is occupied
+
+        int pcsAdded = 0;
+        int attempts = 0;
+        while (pcsAdded < numPCs && attempts < totalTiles * 2) {
+            int pcRow = random.nextInt(rows);
+            int pcCol = random.nextInt(cols);
+            String position = pcRow + "," + pcCol;
+
+            if (!occupiedPositions.contains(position)) {
+                grid[pcRow][pcCol] = new Tile(TileType.PC, random.nextInt(4) * 90, false);
+                occupiedPositions.add(position);
+                pcsAdded++;
+            }
+            attempts++;
+        }
 
         state.setGrid(grid);
 
@@ -403,9 +418,14 @@ public class GameController {
                 else { conn[0] = conn[2] = conn[3] = true; }
                 break;
             case PC:
+                // PC has single connection point that rotates
+                if (rot == 0) { conn[0] = true; }      // Top
+                else if (rot == 90) { conn[1] = true; }  // Right
+                else if (rot == 180) { conn[2] = true; } // Bottom
+                else { conn[3] = true; }                 // Left
+                break;
             case POWER:
-                conn[0] = conn[2] = (rot % 180 == 0);
-                conn[1] = conn[3] = (rot % 180 == 90);
+                // Power source doesn't have connections (it's the source)
                 break;
         }
 
@@ -429,7 +449,7 @@ public class GameController {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Victory!");
         alert.setHeaderText("🎉 Congratulations! 🎉");
-        alert.setContentText("You've successfully solved the puzzle!\n\nAll tiles are connected in a single network.");
+        alert.setContentText("You've successfully connected all PCs to the power source!\n\nAll tiles are connected in a single network.");
         alert.showAndWait();
     }
 
