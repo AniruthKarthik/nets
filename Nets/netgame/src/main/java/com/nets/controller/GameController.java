@@ -261,9 +261,9 @@ public class GameController {
             Gson gson = new GsonBuilder().create();
             
             // Locate C++ engine
-            File engineExe = new File("..\\nets_engine.exe");
+            File engineExe = new File(".." + File.separator + "nets_engine");
             if (!engineExe.exists()) {
-                engineExe = new File("nets_engine.exe");
+                engineExe = new File("nets_engine");
             }
             
             if (!engineExe.exists()) {
