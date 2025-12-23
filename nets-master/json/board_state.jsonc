@@ -1,0 +1,108 @@
+{
+  "grid": [
+    [
+      {
+        "locked": false,
+        "rotation": 0,
+        "type": "CORNER"
+      },
+      {
+        "locked": false,
+        "rotation": 90,
+        "type": "T_JUNCTION"
+      },
+      {
+        "locked": true,
+        "rotation": 0,
+        "type": "STRAIGHT"
+      }
+    ],
+    [
+      {
+        "locked": false,
+        "rotation": 90,
+        "type": "STRAIGHT"
+      },
+      {
+        "locked": false,
+        "rotation": 0,
+        "type": "CROSS"
+      },
+      {
+        "locked": false,
+        "rotation": 270,
+        "type": "PC"
+      }
+    ],
+    [
+      {
+        "locked": true,
+        "rotation": 0,
+        "type": "EMPTY"
+      },
+      {
+        "locked": true,
+        "rotation": 0,
+        "type": "POWER"
+      },
+      {
+        "locked": false,
+        "rotation": 180,
+        "type": "CORNER"
+      }
+    ]
+  ],
+  "last_move": {
+    "actor": "CPU",
+    "col": 1,
+    "rotation": 90,
+    "row": 0
+  },
+  "meta": {
+    "height": 3,
+    "seed": 0,
+    "status": "PLAYING",
+    "turn": "HUMAN",
+    "width": 3,
+    "wraps": false
+  },
+  "rules": {
+    "allow_loops": false,
+    "rotation_rules": {
+      "CORNER": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "CROSS": [
+        0
+      ],
+      "EMPTY": [],
+      "PC": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "POWER": [
+        0
+      ],
+      "STRAIGHT": [
+        0,
+        90
+      ],
+      "T_JUNCTION": [
+        0,
+        90,
+        180,
+        270
+      ]
+    }
+  },
+  "stats": {
+    "components": 3,
+    "is_solved": false,
+    "loose_ends": 10
+  }
+}
