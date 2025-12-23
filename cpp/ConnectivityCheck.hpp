@@ -10,6 +10,8 @@ using namespace std;
 
 // Implementations
 
+// Time Complexity: O(V + E) where V is nodes, E is edges. Since max degree is 4, O(V).
+// Space Complexity: O(V) for visited set and recursion stack.
 inline void dfs(const Graph &graph, pair<int, int> node, set<pair<int, int>> &visited)
 {
 	visited.insert(node);
@@ -27,6 +29,8 @@ inline void dfs(const Graph &graph, pair<int, int> node, set<pair<int, int>> &vi
 	}
 }
 
+// Time Complexity: O(V)
+// Space Complexity: O(V)
 inline bool isFullyConnected(const Graph &graph, pair<int, int> powerSource)
 {
 	if (graph.nodeCount() == 0)
@@ -38,6 +42,8 @@ inline bool isFullyConnected(const Graph &graph, pair<int, int> powerSource)
 	return visited.size() == graph.nodeCount();
 }
 
+// Time Complexity: O(V)
+// Space Complexity: O(V)
 inline int countComponents(const Graph &graph)
 {
 	set<pair<int, int>> visited;
@@ -55,12 +61,16 @@ inline int countComponents(const Graph &graph)
 	return components;
 }
 
+// Time Complexity: O(V log V) due to buildGraph using std::map
+// Space Complexity: O(V)
 inline int countComponents(const Board &board)
 {
 	Graph graph = buildGraph(board);
 	return countComponents(graph);
 }
 
+// Time Complexity: O(V) - Iterates all tiles once
+// Space Complexity: O(1)
 inline int countLooseEnds(const Board &board)
 {
 	int looseEnds = 0;
@@ -116,6 +126,8 @@ inline int countLooseEnds(const Board &board)
 	return looseEnds;
 }
 
+// Time Complexity: O(V)
+// Space Complexity: O(V) for recursion stack
 inline bool dfsCycleDetection(const Graph &graph, pair<int, int> node,
                        pair<int, int> parent, set<pair<int, int>> &visited)
 {
@@ -143,12 +155,16 @@ inline bool dfsCycleDetection(const Graph &graph, pair<int, int> node,
 	return false;
 }
 
+// Time Complexity: O(V)
+// Space Complexity: O(V)
 inline bool hasClosedLoop(const Graph &graph, pair<int, int> startNode)
 {
 	set<pair<int, int>> visited;
 	return dfsCycleDetection(graph, startNode, {-1, -1}, visited);
 }
 
+// Time Complexity: O(V)
+// Space Complexity: O(V)
 inline bool hasClosedLoop(const Graph &graph)
 {
 	set<pair<int, int>> visited;
@@ -167,12 +183,16 @@ inline bool hasClosedLoop(const Graph &graph)
 	return false;
 }
 
+// Time Complexity: O(V log V) due to buildGraph
+// Space Complexity: O(V)
 inline bool hasClosedLoop(const Board &board)
 {
 	Graph graph = buildGraph(board);
 	return hasClosedLoop(graph);
 }
 
+// Time Complexity: O(V log V) dominated by buildGraph
+// Space Complexity: O(V)
 inline bool isSolved(const Board &board)
 {
 	if (board.powerTile.first == -1)

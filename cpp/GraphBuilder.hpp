@@ -12,17 +12,23 @@ struct Graph
 {
 	map<pair<int, int>, vector<pair<int, int>>> adjList;
 
+    // Time Complexity: O(log V) due to map insertion
+    // Space Complexity: O(1) amortized
 	void addEdge(pair<int, int> a, pair<int, int> b)
 	{
 		adjList[a].push_back(b);
 		adjList[b].push_back(a);
 	}
 
+    // Time Complexity: O(1)
+    // Space Complexity: O(1)
 	int nodeCount() const { return adjList.size(); }
 };
 
 // Implementation
 
+// Time Complexity: O(V log V) due to map operations inside loop
+// Space Complexity: O(V) to store the graph
 inline Graph buildGraph(const Board &board)
 {
 	Graph graph;

@@ -11,6 +11,8 @@ using namespace std;
 
 // Implementations
 
+// Time Complexity: O(V) where V is number of tiles
+// Space Complexity: O(V) to store moves
 inline vector<Move> generateMoves(const Board &board, pair<int, int> lastMovedTile) {
   vector<Move> moves;
 
@@ -34,6 +36,8 @@ inline vector<Move> generateMoves(const Board &board, pair<int, int> lastMovedTi
 }
 
 // Helper function to define the importance of each tile type
+// Time Complexity: O(1)
+// Space Complexity: O(1)
 inline int getTileTypePriority(TileType type) {
     switch (type) {
         case T_JUNCTION: return 4;
@@ -44,7 +48,8 @@ inline int getTileTypePriority(TileType type) {
     }
 }
 
-// Swaps two Move objects
+// Time Complexity: O(1)
+// Space Complexity: O(1)
 inline void swapMoves(Move &a, Move &b) {
     Move temp = a;
     a = b;
@@ -52,6 +57,8 @@ inline void swapMoves(Move &a, Move &b) {
 }
 
 // Partition function for Quick Sort
+// Time Complexity: O(M) where M is range [low, high]
+// Space Complexity: O(1)
 inline int quickSort_partition(vector<Move> &moves, int low, int high, const Board &board) {
     Move pivot = moves[high];
     TileType pivotType = board.at(pivot.x, pivot.y).type;
@@ -72,6 +79,8 @@ inline int quickSort_partition(vector<Move> &moves, int low, int high, const Boa
 }
 
 // Recursive Quick Sort function
+// Time Complexity: Best/Avg O(M log M), Worst O(M^2) where M is number of moves
+// Space Complexity: O(log M) stack space
 inline void quickSort_recursive(vector<Move> &moves, int low, int high, const Board &board) {
     if (low < high) {
         int pi = quickSort_partition(moves, low, high, board);
@@ -80,13 +89,16 @@ inline void quickSort_recursive(vector<Move> &moves, int low, int high, const Bo
     }
 }
 
-// Main function to initiate Quick Sort
+// Time Complexity: O(M log M)
+// Space Complexity: O(log M)
 inline void sortMoves(vector<Move> &moves, const Board &board) {
     if (!moves.empty()) {
         quickSort_recursive(moves, 0, moves.size() - 1, board);
     }
 }
 
+// Time Complexity: O(V log V) due to buildGraph
+// Space Complexity: O(V)
 inline int evaluateBoard(const Board &board) {
   Graph graph = buildGraph(board);
   int looseEnds = countLooseEnds(board);
@@ -98,6 +110,8 @@ inline int evaluateBoard(const Board &board) {
   return score;
 }
 
+// Time Complexity: O(M * V log V) where M is number of moves (approx V), so O(V^2 log V)
+// Space Complexity: O(V)
 inline Move chooseBestMove(const Board &board, pair<int, int> lastMovedTile) {
   vector<Move> moves = generateMoves(board, lastMovedTile);
   if (moves.empty()) {

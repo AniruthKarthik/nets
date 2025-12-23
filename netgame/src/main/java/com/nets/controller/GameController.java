@@ -21,6 +21,8 @@ public class GameController {
         this.gameBoard = gameBoard;
     }
 
+    // Time Complexity: O(N^2) dominated by createNewGameState (Prim's)
+    // Space Complexity: O(N) where N is total cells
     public void initGame(int rows, int cols) {
         try {
             // Create new game state
@@ -34,6 +36,8 @@ public class GameController {
         }
     }
 
+    // Time Complexity: O(N^2) due to randomized Prim's with ArrayList
+    // Space Complexity: O(N)
     private GameState createNewGameState(int rows, int cols) {
         GameState state = new GameState();
 
@@ -92,6 +96,8 @@ public class GameController {
         return state;
     }
 
+    // Time Complexity: O(N) where N is number of cells
+    // Space Complexity: O(1)
     public void toggleSolution(boolean show) {
         Tile[][] gridToShow = show ? this.solvedGrid : this.gameState.getGrid();
         
@@ -104,6 +110,8 @@ public class GameController {
         }
     }
     
+    // Time Complexity: O(E^2) approx O(N^2) because ArrayList remove is O(E) and we loop E times
+    // Space Complexity: O(N)
     private Tile[][] generateGrid(int rows, int cols) {
         // 1. Generate a Spanning Tree starting from the center POWER tile
         Tile[][] grid = new Tile[rows][cols];
@@ -170,6 +178,8 @@ public class GameController {
         return grid;
     }
 
+    // Time Complexity: O(N)
+    // Space Complexity: O(N) for DFS/recursion
     private boolean validateGeneratedGrid(Tile[][] grid) {
         // 1. Check for loose ends
         if (calculateLooseEnds(grid) != 0) return false;
@@ -188,6 +198,8 @@ public class GameController {
         return true;
     }
 
+    // Time Complexity: O(1)
+    // Space Complexity: O(1)
     private void addEdges(List<int[]> edges, int r, int c, int rows, int cols, boolean[][] inTree) {
         int[][] dirs = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
         for (int i = 0; i < 4; i++) {
@@ -199,6 +211,8 @@ public class GameController {
         }
     }
 
+    // Time Complexity: O(1)
+    // Space Complexity: O(1)
     private void assignWireType(Tile tile, boolean[] conn) {
         int count = 0;
         for (boolean b : conn) if (b) count++;
@@ -222,6 +236,8 @@ public class GameController {
         }
     }
 
+    // Time Complexity: O(N)
+    // Space Complexity: O(1)
     private void setupEventHandlers() {
         TileView[][] tileViews = gameBoard.getTileViews();
 
@@ -257,6 +273,8 @@ public class GameController {
         }
     }
 
+    // Time Complexity: O(N) dominated by UI update and stats calculation
+    // Space Complexity: O(N) for recursion stacks
     private void handleHumanMove(int row, int col, int rotation) {
         try {
             // Update local state
@@ -306,6 +324,8 @@ public class GameController {
         }
     }
 
+    // Time Complexity: O(N) for serialization/deserialization. Logic inside is N^2 approx.
+    // Space Complexity: O(N) for JSON data
     private com.google.gson.JsonObject invokeCppEngine(String action) throws IOException, InterruptedException {
         Gson gson = new GsonBuilder().create();
 
@@ -355,6 +375,8 @@ public class GameController {
         return gson.fromJson(output.toString(), com.google.gson.JsonObject.class);
     }
 
+    // Time Complexity: O(N^2) due to engine call
+    // Space Complexity: O(N)
     private void performStandaloneCpuMove() {
         try {
             com.google.gson.JsonObject response = invokeCppEngine("get_cpu_move");
@@ -403,6 +425,8 @@ public class GameController {
         }
     }
 
+    // Time Complexity: O(N) due to IPC
+    // Space Complexity: O(N)
     private void updateStats() {
         try {
             com.google.gson.JsonObject response = invokeCppEngine("get_stats");
@@ -423,6 +447,8 @@ public class GameController {
         }
     }
 
+    // Time Complexity: O(N)
+    // Space Complexity: O(1)
     private int calculateLooseEnds(Tile[][] grid) {
         int looseEnds = 0;
         int rows = grid.length;
@@ -460,6 +486,8 @@ public class GameController {
         return looseEnds;
     }
 
+    // Time Complexity: O(N)
+    // Space Complexity: O(N)
     private int calculateComponents(Tile[][] grid) {
         int rows = grid.length;
         int cols = grid[0].length;
@@ -478,6 +506,8 @@ public class GameController {
         return components;
     }
 
+    // Time Complexity: O(N)
+    // Space Complexity: O(N)
     private void dfs(Tile[][] grid, boolean[][] visited, int i, int j, Set<Tile> poweredSet) {
         if (i < 0 || i >= grid.length || j < 0 || j >= grid[0].length) return;
         if (visited[i][j] || grid[i][j].getType() == TileType.EMPTY) return;
@@ -511,6 +541,8 @@ public class GameController {
         }
     }
 
+    // Time Complexity: O(N)
+    // Space Complexity: O(N)
     private void updatePoweredStatus() {
         Tile[][] grid = gameState.getGrid();
         int rows = grid.length;
@@ -547,6 +579,8 @@ public class GameController {
     }
 
 
+    // Time Complexity: O(1)
+    // Space Complexity: O(1)
     private boolean[] getConnections(Tile tile) {
         // Returns [top, right, bottom, left]
         if (tile.getConnections() != null) {
@@ -595,6 +629,8 @@ public class GameController {
         return conn;
     }
 
+    // Time Complexity: O(N)
+    // Space Complexity: O(1)
     private boolean checkWinCondition() {
         // The 'solved' status from C++ engine checks for components, loose ends, and loops.
         boolean isMathematicallySolved = gameState.getStats().isSolved();
@@ -618,6 +654,8 @@ public class GameController {
         return true;
     }
 
+    // Time Complexity: O(1) assuming checkWinCondition already called or O(N)
+    // Space Complexity: O(1)
     private void checkAndHandleWin() {
         if (checkWinCondition()) {
             gameState.getMeta().setStatus("SOLVED");
@@ -649,6 +687,8 @@ public class GameController {
         alert.showAndWait();
     }
 
+    // Time Complexity: O(N^2) (Calls initGame)
+    // Space Complexity: O(N)
     public void resetGame(int rows, int cols) {
         initGame(rows, cols);
     }
