@@ -565,11 +565,6 @@ public class GameController {
                 else if (rot == 180) { conn[2] = true; }
                 else { conn[3] = true; }
                 break;
-            case POWER:
-            case CROSS:
-                // Power and Cross behave as 4-way junctions.
-                conn[0] = conn[1] = conn[2] = conn[3] = true;
-                break;
         }
 
         return conn;
