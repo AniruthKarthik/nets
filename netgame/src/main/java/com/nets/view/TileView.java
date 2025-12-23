@@ -10,8 +10,15 @@ import javafx.scene.transform.Rotate;
 public class TileView extends Canvas {
     private static final double SIZE = 80;
     private static final double LINE_WIDTH = 6;
-    private static final Color POWERED_COLOR = Color.rgb(0, 255, 100); // Bright Green - for connected network
-    private static final Color UNPOWERED_COLOR = Color.rgb(255, 200, 0); // Gold/Yellow - for disconnected
+
+    // Wire colors
+    private static final Color WIRE_POWERED_COLOR = Color.rgb(0, 255, 100); // Bright Green - for connected wires
+    private static final Color WIRE_UNPOWERED_COLOR = Color.rgb(255, 200, 0); // Gold/Yellow - for disconnected wires
+
+    // PC colors
+    private static final Color PC_POWERED_COLOR = Color.rgb(0, 200, 255); // Cyan/Light Blue - for connected PCs
+    private static final Color PC_UNPOWERED_COLOR = Color.rgb(150, 150, 150); // Gray - for disconnected PCs
+
     private static final Color BG_COLOR = Color.rgb(40, 40, 60);
     private static final Color LOCKED_COLOR = Color.rgb(60, 60, 80);
 
@@ -46,8 +53,14 @@ public class TileView extends Canvas {
         gc.rotate(tile.getRotation());
         gc.translate(-SIZE / 2, -SIZE / 2);
 
-        // Choose color based on powered status
-        Color wireColor = tile.isPowered() ? POWERED_COLOR : UNPOWERED_COLOR;
+        // Choose color based on powered status and tile type
+        Color wireColor;
+        if (tile.getType() == TileType.PC) {
+            wireColor = tile.isPowered() ? PC_POWERED_COLOR : PC_UNPOWERED_COLOR;
+        } else {
+            wireColor = tile.isPowered() ? WIRE_POWERED_COLOR : WIRE_UNPOWERED_COLOR;
+        }
+
         gc.setStroke(wireColor);
         gc.setLineWidth(LINE_WIDTH);
         gc.setLineCap(javafx.scene.shape.StrokeLineCap.ROUND);
@@ -95,9 +108,13 @@ public class TileView extends Canvas {
 
     private void drawTJunction(GraphicsContext gc) {
         double center = SIZE / 2;
-        // Draw T-shape: top, left, and right (no bottom)
-        gc.strokeLine(center, 0, center, center);  // Top line only
-        gc.strokeLine(0, center, SIZE, center);     // Horizontal line (left to right)
+        // Draw T-shape as one continuous path: top, left, and right (no bottom)
+        gc.beginPath();
+        gc.moveTo(center, 0);           // Start at top
+        gc.lineTo(center, center);      // Draw to center
+        gc.moveTo(0, center);           // Move to left
+        gc.lineTo(SIZE, center);        // Draw horizontal line to right
+        gc.stroke();
     }
 
     private void drawPC(GraphicsContext gc, Color wireColor) {
