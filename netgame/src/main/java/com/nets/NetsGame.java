@@ -224,7 +224,25 @@ public class NetsGame extends Application {
         ));
         helpButton.setOnAction(e -> showHelp());
 
-        controls.getChildren().addAll(newGameButton, resetButton, helpButton);
+        ToggleButton solutionButton = new ToggleButton("Show Solution");
+        String solutionButtonStyle = "-fx-background-color: #ffc107; -fx-text-fill: black; -fx-font-size: 14px; -fx-padding: 10 20; -fx-cursor: hand; -fx-background-radius: 5;";
+        String solutionButtonHoverStyle = "-fx-background-color: #ffca2c; -fx-text-fill: black; -fx-font-size: 14px; -fx-padding: 10 20; -fx-cursor: hand; -fx-background-radius: 5;";
+        solutionButton.setStyle(solutionButtonStyle);
+        solutionButton.setOnMouseEntered(e -> { if (!solutionButton.isSelected()) solutionButton.setStyle(solutionButtonHoverStyle); });
+        solutionButton.setOnMouseExited(e -> { if (!solutionButton.isSelected()) solutionButton.setStyle(solutionButtonStyle); });
+        solutionButton.setOnAction(e -> {
+            boolean isSelected = solutionButton.isSelected();
+            if (controller != null) {
+                controller.toggleSolution(isSelected);
+            }
+            if (isSelected) {
+                solutionButton.setStyle(solutionButtonHoverStyle); // Keep hover style when selected
+            } else {
+                solutionButton.setStyle(solutionButtonStyle);
+            }
+        });
+
+        controls.getChildren().addAll(newGameButton, resetButton, helpButton, solutionButton);
         return controls;
     }
 

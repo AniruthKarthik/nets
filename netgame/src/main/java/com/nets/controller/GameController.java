@@ -15,6 +15,7 @@ import java.util.*;
 public class GameController {
     private GameBoard gameBoard;
     private GameState gameState;
+    private Tile[][] solvedGrid; // To store the solved state
 
     public GameController(GameBoard gameBoard) {
         this.gameBoard = gameBoard;
@@ -52,6 +53,18 @@ public class GameController {
             grid = generateGrid(rows, cols);
         } while (!validateGeneratedGrid(grid));
 
+        // Deep copy the solved grid before scrambling
+        this.solvedGrid = new Tile[rows][cols];
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                Tile original = grid[r][c];
+                Tile copy = new Tile(original.getType(), original.getRotation(), original.isLocked());
+                copy.setConnections(original.getConnections()); // Shallow copy of connections is ok here
+                this.solvedGrid[r][c] = copy;
+            }
+        }
+
+
         // 3. Scramble the puzzle (except POWER and EMPTY)
         Random rand = new Random();
         for (int r = 0; r < rows; r++) {
@@ -79,6 +92,18 @@ public class GameController {
         return state;
     }
 
+    public void toggleSolution(boolean show) {
+        Tile[][] gridToShow = show ? this.solvedGrid : this.gameState.getGrid();
+        
+        if (gridToShow == null) return; // Solution not generated yet
+
+        for (int r = 0; r < gridToShow.length; r++) {
+            for (int c = 0; c < gridToShow[0].length; c++) {
+                gameBoard.getTileView(r, c).updateTile(gridToShow[r][c]);
+            }
+        }
+    }
+    
     private Tile[][] generateGrid(int rows, int cols) {
         // 1. Generate a Spanning Tree starting from the center POWER tile
         Tile[][] grid = new Tile[rows][cols];
@@ -602,10 +627,17 @@ public class GameController {
     }
 
     private void showWinMessage() {
+        String winner = "Unknown";
+        if (gameState.getLastMove() != null) {
+            winner = "HUMAN".equalsIgnoreCase(gameState.getLastMove().getActor()) ? "You (Human)" : "CPU";
+        }
+
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Victory!");
         alert.setHeaderText("🎉 Congratulations! 🎉");
-        alert.setContentText("You've successfully connected all PCs to the power source!\n\nAll tiles are connected in a single network.");
+        alert.setContentText("Winner: " + winner + "!\n\n" +
+                "You've successfully connected all PCs to the power source!\n\n" +
+                "All tiles are connected in a single network.");
         alert.showAndWait();
     }
 
