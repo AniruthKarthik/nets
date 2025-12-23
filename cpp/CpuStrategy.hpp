@@ -21,11 +21,8 @@ inline vector<Move> generateMoves(const Board &board) {
       // Only generate moves for non-locked tiles.
       if (!board.at(i, j).locked) {
            int currentRot = board.at(i, j).rotation;
-           for (int r = 0; r <= 270; r += 90) {
-               if (r != currentRot) {
-                   moves.push_back({i, j, r});
-               }
-           }
+           int nextRot = (currentRot + 90) % 360;
+           moves.push_back({i, j, nextRot});
       }
     }
   }
