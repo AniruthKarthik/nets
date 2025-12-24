@@ -165,19 +165,19 @@ Writing a custom Quick Sort demonstrates an understanding of the algorithm's div
 ### 7. TIME & SPACE COMPLEXITY
 
 **Time Complexity:**
-*   **Initialization (Prim's):** $O(E \log V)$ or roughly $O(N \log N)$ for grid size $N$.
-*   **Graph Build:** $O(V + E) \approx O(N)$ (linear scan of grid).
+*   **Initialization (Prim's):** $O(N^2)$ (dominated by `ArrayList::remove` in the randomized selection).
+*   **Graph Build:** $O(N \log N)$ (due to `std::map` insertions).
 *   **DFS Traversal:** $O(V + E) \approx O(N)$.
 *   **CPU Move Selection:**
     *   Generates $O(N)$ moves.
-    *   For each move, builds graph and runs DFS: $O(N)$.
-    *   **Total:** $O(N^2)$.
+    *   For each move, builds graph ($O(N \log N)$) and runs DFS ($O(N)$).
+    *   **Total:** $O(N^2 \log N)$.
 *   **Quick Sort:** $O(N \log N)$.
 
 **Space Complexity:**
 *   **Grid Storage:** $O(N)$ ($N$ = total tiles).
-*   **Graph (Adjacency List):** $O(V + E) \approx O(N)$.
-*   **Recursion Stack (DFS):** $O(V) \approx O(N)$ (worst case: line graph).
+*   **Graph (Adjacency List):** $O(N)$ (storing edges for sparse grid).
+*   **Recursion Stack (DFS):** $O(N)$ (worst case: line graph).
 
 ---
 
