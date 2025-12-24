@@ -18,9 +18,7 @@ inline vector<Move> generateMoves(const Board &board, pair<int, int> lastMovedTi
 
   for (int i = 0; i < board.height; i++) {
     for (int j = 0; j < board.width; j++) {
-      if (i == lastMovedTile.first && j == lastMovedTile.second) {
-          continue;
-      }
+
 
       if (board.at(i, j).type == EMPTY) continue;
       
@@ -129,6 +127,12 @@ inline Move chooseBestMove(const Board &board, pair<int, int> lastMovedTile) {
     applyMove(tempBoard, move);
 
     int score = evaluateBoard(tempBoard);
+
+    // Apply penalty to discourage undo loops, UNLESS it solves the puzzle.
+    if (move.x == lastMovedTile.first && move.y == lastMovedTile.second) {
+        score += 1;
+    }
+
     if (score < bestScore) {
       bestScore = score;
       bestMove = move;
