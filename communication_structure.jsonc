@@ -1,0 +1,74 @@
+{
+  // ==================================================================================
+  // REQUEST STRUCTURE (Java -> C++)
+  // ==================================================================================
+  
+  // The action to perform.
+  // "get_cpu_move": Asks the engine to calculate the next best move.
+  // "get_stats": Asks the engine to calculate current board statistics (loose ends, etc.).
+  "action": "get_cpu_move", // or "get_stats"
+
+  // The full state of the game board.
+  "gameState": {
+    "meta": {
+      "width": 5,          // Number of columns
+      "height": 5,         // Number of rows
+      "wraps": false,      // Whether the board wraps around edges (toroidal)
+      "status": "PLAYING", // Game status: "PLAYING", "SOLVED", etc.
+      "turn": "CPU"        // Who is currently playing: "HUMAN" or "CPU"
+    },
+    
+    // The last move made, used by the engine to avoid moving the same tile back immediately
+    // or to optimize search (heuristic). Can be null.
+    "lastMove": {
+      "actor": "HUMAN",
+      "row": 2,
+      "col": 3,
+      "rotation": 90
+    },
+
+    // 2D Array representing the board [row][col]
+    "grid": [
+      [
+        {
+          "type": "CORNER",    // Tile Types: STRAIGHT, CORNER, T_JUNCTION, CROSS, PC, POWER, EMPTY
+          "rotation": 90,      // Rotation in degrees: 0, 90, 180, 270
+          "locked": false,     // If true, this tile cannot be rotated by the player/CPU
+          "powered": false     // (Optional) UI state, usually ignored by engine logic
+        },
+        // ... more columns ...
+        {
+          "type": "POWER",
+          "rotation": 0,
+          "locked": true,
+          // POWER tiles may have explicit connection arrays overrides [Top, Right, Bottom, Left]
+          "connections": [true, true, true, true] 
+        }
+      ]
+      // ... more rows ...
+    ]
+  },
+
+
+  // ==================================================================================
+  // RESPONSE STRUCTURE (C++ -> Java)
+  // ==================================================================================
+  
+  // ----------------------------------------------------------------------------------
+  // Scenario A: Action was "get_cpu_move"
+  // ----------------------------------------------------------------------------------
+  "move": {
+    "row": 1,        // The row index of the tile to rotate
+    "col": 4,        // The column index of the tile to rotate
+    "rotation": 180  // The NEW absolute rotation for the tile (0, 90, 180, 270)
+  },
+
+  // ----------------------------------------------------------------------------------
+  // Scenario B: Action was "get_stats"
+  // ----------------------------------------------------------------------------------
+  "stats": {
+    "components": 2,    // Number of disconnected networks (1 means fully connected)
+    "looseEnds": 3,     // Number of open connections pointing to nothing or mismatched ports
+    "solved": false     // True if components == 1, looseEnds == 0, and no loops (if disallowed)
+  }
+}
