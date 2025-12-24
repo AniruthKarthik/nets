@@ -1,97 +1,125 @@
 # Analysis of Algorithm Complexity - NETS Project
 
 ## 1. Overview
-This document analyzes the Time and Space Complexity of the NETS game project. The system is a hybrid application with a **Java** frontend (Controller/UI) and a **C++** backend (Computational Engine).
+This analysis evaluates the Time and Space Complexity of the NETS game project, which consists of a Java-based Controller/UI and a C++ computational engine.
 
-**Definitions:**
-- **N**: Total number of tiles on the board ($N = Rows \times Cols$).
-- **V**: Number of vertices in the graph representation ($V = N$).
-- **E**: Number of edges in the graph representation ($E \le 4N$, so $O(E) = O(N)$).
-- **M**: Number of possible moves ($M \approx V$, specifically $3V$ as each tile has 3 alternative rotations).
-
----
-
-## 2. Java Controller Analysis (`netgame/...`)
-
-### Initialization & Grid Generation
-The `GameController::generateGrid` method uses a Randomized Prim's Algorithm to generate a perfect maze (spanning tree).
-
-- **Current Complexity:** $O(N^2)$
-- **Reasoning:**
-    - The algorithm maintains a list of potential edges (`ArrayList<int[]> edges`).
-    - In the main loop (which runs $N$ times to visit all cells), it picks a random edge and removes it: `edges.remove(edgeIdx)`.
-    - `ArrayList::remove` is $O(K)$ where $K$ is the current number of edges. Since $K$ scales with $N$, this operation is $O(N)$.
-    - Total: $N \times O(N) = O(N^2)$.
-
-### Move Handling
-- **Human Move:** $O(N \log N)$
-    - The UI update is $O(N)$.
-    - However, it calls the C++ engine for stats (`get_stats`), which involves graph construction ($O(N \log N)$).
-- **IPC Overhead:** $O(N)$
-    - Serializing the grid state to JSON and parsing the response scales linearly with the board size.
+**Variables Used:**
+- N: Total number of tiles on the board (N = Rows x Cols).
+- V: Number of vertices in the graph representation (equivalent to N).
+- E: Number of edges in the graph representation (at most 4N, so E is O(N)).
+- M: Number of possible moves for a given board state (M approx 3N).
 
 ---
 
-## 3. C++ Engine Analysis (`cpp/...`)
+## 2. File-Wise Complexity Breakdown
 
-### Graph Construction (`GraphBuilder.hpp`)
-The engine rebuilds the graph from the grid state for every analysis request.
-
-- **Current Complexity:** $O(N \log N)$
-- **Reasoning:**
-    - The function iterates over all $N$ tiles.
-    - It uses `std::map<pair<int, int>, vector<...>>` to store the Adjacency List.
-    - Insertions and lookups in a `std::map` (Red-Black Tree) take $O(\log V) = O(\log N)$.
-    - Total: $N \times O(\log N) = O(N \log N)$.
-
-### Connectivity Checks (`ConnectivityCheck.hpp`)
-Algorithms like `countComponents`, `isFullyConnected`, and `hasClosedLoop` utilize Depth First Search (DFS).
-
-- **DFS Complexity:** $O(V + E) = O(N)$
-- **Overall Check Complexity:** $O(N \log N)$
-    - While the DFS traversal itself is linear $O(N)$, these functions first call `buildGraph`, so they are dominated by the graph construction cost.
-
-### CPU Strategy (`CpuStrategy.hpp`)
-The CPU uses a greedy strategy with 1-ply lookahead.
-
-- **Current Complexity:** $O(N^2 \log N)$
-- **Reasoning:**
-    1.  **Move Generation:** $O(N)$ to find all valid moves.
-    2.  **Sorting:** $O(N \log N)$ to sort moves by local fit.
-    3.  **Evaluation Loop:** Iterates through up to $M$ moves ($O(N)$).
-        - For each candidate move, it copies the board and calls `evaluateBoard`.
-        - `evaluateBoard` calls `buildGraph` ($O(N \log N)$) and connectivity checks ($O(N)$).
-    - Total: $N \times O(N \log N) = O(N^2 \log N)$.
-
----
-
-## 4. Summary Table
-
-| Operation | Component | Complexity | Dominating Factor |
+### File: cpp/ConnectivityCheck.hpp
+| Function Name | Time Complexity | Space Complexity | Notes |
 |---|---|---|---|
-| **Grid Gen** | Java | $O(N^2)$ | `ArrayList::remove` inside loop |
-| **Get Stats** | C++ | $O(N \log N)$ | `std::map` insertions in `buildGraph` |
-| **CPU Move** | C++ | $O(N^2 \log N)$ | Rebuilding graph for every candidate move |
-| **Memory** | Both | $O(N)$ | Grid storage, Adjacency List, Recursion Stack |
+| dfs | O(N) | O(N) | Standard DFS; N nodes, 4N edges max |
+| isFullyConnected | O(N) | O(N) | Single DFS traversal |
+| countComponents | O(N) | O(N) | Iterates all nodes, DFS on unvisited |
+| countLooseEnds | O(N) | O(1) | Linear scan of grid, constant neighbor checks |
+| dfsCycleDetection | O(N) | O(N) | DFS carrying parent pointer |
+| hasClosedLoop (node) | O(N) | O(N) | Cycle check from specific node |
+| hasClosedLoop (graph) | O(N) | O(N) | Checks all components for cycles |
+| hasClosedLoop (board) | O(N log N) | O(N) | Dominated by buildGraph |
+| isSolved | O(N log N) | O(N) | Dominated by buildGraph |
+
+### File: cpp/CpuStrategy.hpp
+| Function Name | Time Complexity | Space Complexity | Notes |
+|---|---|---|---|
+| generateMoves | O(N) | O(N) | Scans grid once, stores valid moves |
+| calculateLocalFit | O(1) | O(1) | Checks 4 neighbors |
+| swapMoves | O(1) | O(1) | Simple swap |
+| quickSort_partition | O(M) | O(1) | M is partition size |
+| quickSort_recursive | O(M log M) | O(log M) | Average case sorting |
+| sortMoves | O(M log M) | O(log M) | Calls recursive quick sort |
+| evaluateBoard | O(N log N) | O(N) | Builds graph and runs DFS checks |
+| chooseBestMove | O(N^2 log N) | O(N) | Evaluates O(N) moves, each taking O(N log N) |
+
+### File: cpp/GraphBuilder.hpp
+| Function Name | Time Complexity | Space Complexity | Notes |
+|---|---|---|---|
+| Graph::addEdge | O(log N) | O(1) | Map insertion |
+| Graph::nodeCount | O(1) | O(1) | Map size check |
+| buildGraph | O(N log N) | O(N) | N iterations, each with map lookups/inserts |
+
+### File: cpp/Tile.hpp
+| Function Name | Time Complexity | Space Complexity | Notes |
+|---|---|---|---|
+| getActivePorts | O(1) | O(1) | Fixed number of ports/rotations |
+| opposite | O(1) | O(1) | Arithmetic op |
+| rotateDirection | O(1) | O(1) | Arithmetic op |
+| getNeighbor | O(1) | O(1) | Arithmetic checks |
+
+### File: netgame/src/main/java/com/nets/controller/GameController.java
+| Function Name | Time Complexity | Space Complexity | Notes |
+|---|---|---|---|
+| initGame | O(N^2) | O(N) | Calls createNewGameState |
+| createNewGameState | O(N^2) | O(N) | Loop until valid grid (usually 1 try) |
+| toggleSolution | O(N) | O(1) | Iterates grid to update view |
+| generateGrid | O(N^2) | O(N) | Randomized Prims with O(N) removal |
+| validateGeneratedGrid | O(N) | O(N) | DFS checks |
+| addEdges | O(1) | O(1) | Adds up to 4 edges |
+| assignWireType | O(1) | O(1) | Logic checks |
+| setupEventHandlers | O(N) | O(1) | Attaches listeners to N tiles |
+| handleHumanMove | O(N log N) | O(N) | UI update + Engine Stats (O(N log N)) |
+| invokeCppEngine | O(N) | O(N) | JSON Serialization/Deserialization |
+| performStandaloneCpuMove | O(N^2 log N) | O(N) | Calls C++ engine |
+| updateStats | O(N log N) | O(N) | Calls C++ engine stats |
+| calculateLooseEnds | O(N) | O(1) | Linear scan |
+| calculateComponents | O(N) | O(N) | DFS based |
+| dfs | O(N) | O(N) | Standard traversal |
+| updatePoweredStatus | O(N) | O(N) | DFS from power source |
+| getConnections | O(1) | O(1) | Switch case check |
+| checkWinCondition | O(N) | O(1) | Linear scan for powered status |
 
 ---
 
-## 5. Critical Optimizations
+## 3. Key Algorithmic Operations
 
-### 1. Linear Time Grid Generation ($O(N^2) \to O(N)$)
-**Location:** `GameController.java` inside `generateGrid`
-- **Change:** Replace `edges.remove(edgeIdx)` with a "Swap-and-Pop" strategy.
-- **Details:** Since the order of edges is irrelevant for random selection, swap the selected edge with the last element in the list, then remove the last element. This makes removal $O(1)$.
-- **Impact:** Reduces initialization time from Quadratic to Linear.
+### Grid / Graph Construction
+- **Time:** O(N log N)
+- **Explanation:** The C++ engine converts the 2D grid into an Adjacency List. It uses std::map to store nodes, resulting in O(log N) insertion time per node. Since there are N nodes, the total time is O(N log N).
 
-### 2. Linear Time Graph Construction ($O(N \log N) \to O(N)$)
-**Location:** `GraphBuilder.hpp`
-- **Change:** Replace `std::map<pair<int,int>, ...>` with `std::vector<vector<int>>`.
-- **Details:** Map 2D coordinates $(r, c)$ to a 1D index $idx = r \times Width + c$. Use a vector of size $N$ for the adjacency list.
-- **Impact:** Eliminates the $\log N$ tree overhead, making graph building $O(N)$. This would cascade to make `Get Stats` $O(N)$ and `CPU Move` $O(N^2)$.
+### Neighbor Lookup
+- **Time:** O(1)
+- **Explanation:** Handled via direct array indexing checking 4 directions.
 
-### 3. Incremental Evaluation
-**Location:** `CpuStrategy.hpp`
-- **Change:** Avoid rebuilding the entire graph for every simulated move.
-- **Details:** When testing a move (rotating one tile), only the edges connected to that specific tile change. Updating the graph locally would take $O(1)$.
-- **Impact:** Reduces CPU Move evaluation to $O(N^2)$ (dominated by creating $N$ moves) or even $O(N)$ if we only evaluate the top $K$ candidates.
+### CPU Move Selection (Greedy)
+- **Time:** O(N^2 log N)
+- **Explanation:**
+    1.  Generates all valid moves (O(N)).
+    2.  Sorts moves using Quick Sort (O(N log N)).
+    3.  Iterates through sorted moves. For each move, it builds a graph and evaluates it (O(N log N)).
+    4.  Total: N x N log N = O(N^2 log N).
+
+### Sorting (Quick Sort)
+- **Time:** O(M log M)
+- **Explanation:** A custom Quick Sort implementation prioritizes moves based on tile complexity (Junctions > Corners > Straight).
+
+---
+
+## 4. Overall System Complexity
+
+### Time Complexity
+- **Initialization:** O(N^2) due to Prims Algorithm implementation using ArrayList.
+- **Human Turn:** O(N log N) (UI updates + Stats from Engine).
+- **CPU Turn:** O(N^2 log N) (Greedy Strategy evaluation).
+
+### Space Complexity
+- **Overall:** O(N)
+- **Breakdown:** The Grid, Graph Adjacency List, and DFS recursion stacks all scale linearly with the number of tiles.
+
+---
+
+## 5. Observations & Recommendations
+
+### Bottlenecks
+1.  **CPU Move Evaluation:** The CPU rebuilds the entire graph (O(N log N)) for every candidate move it simulates. This leads to quadratic complexity.
+2.  **IPC Overhead:** Transferring the full game state via JSON for every move adds linear overhead O(N) and process creation latency.
+
+### Optimizations
+1.  **Incremental Graph Update:** Instead of rebuilding the graph, the CPU could update only the affected edges of the moved tile (O(log N) or O(1)). This would reduce move evaluation to O(N), making the total CPU turn O(N^2) or even O(N) if combined with local connectivity checks.
+2.  **HashMap vs TreeMap:** Using std::unordered_map in C++ instead of std::map would reduce graph construction to O(N) on average.
