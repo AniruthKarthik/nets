@@ -23,7 +23,6 @@ inline vector<Move> generateMoves(const Board &board,
       if (board.at(i, j).type == EMPTY)
         continue;
 
-      // Only generate moves for non-locked tiles.
       if (!board.at(i, j).locked) {
         int currentRot = board.at(i, j).rotation;
         int nextRot = (currentRot + 90) % 360;
@@ -34,7 +33,6 @@ inline vector<Move> generateMoves(const Board &board,
   return moves;
 }
 
-// Helper function to calculate local fit (number of matching connections)
 // Time Complexity: O(1) (checks 4 neighbors)
 inline int calculateLocalFit(const Board &board, const Move &move) {
   Tile t = board.at(move.x, move.y);

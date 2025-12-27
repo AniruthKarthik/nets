@@ -55,7 +55,12 @@ public class GameController {
         Tile[][] grid;
         do {
             grid = generateGrid(rows, cols);
+
+
         } while (!validateGeneratedGrid(grid));
+
+
+        int count = 0;
 
         // Deep copy the solved grid before scrambling
         this.solvedGrid = new Tile[rows][cols];
@@ -65,8 +70,13 @@ public class GameController {
                 Tile copy = new Tile(original.getType(), original.getRotation(), original.isLocked());
                 copy.setConnections(original.getConnections()); // Shallow copy of connections is ok here
                 this.solvedGrid[r][c] = copy;
+
+            if (grid[r][c].getType() == TileType.STRAIGHT || grid[r][c].getType() == TileType.CORNER || grid[r][c].getType() == TileType.T_JUNCTION ){
+                count++;
+            }
             }
         }
+        System.out.println("no of wire tiles: " + count);
 
 
         // 3. Scramble the puzzle (except POWER and EMPTY)

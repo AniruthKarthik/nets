@@ -242,7 +242,19 @@ public class NetsGame extends Application {
             }
         });
 
-        controls.getChildren().addAll(newGameButton, resetButton, helpButton, solutionButton);
+        Button rotateButton = new Button("Rotate Board");
+        String rotateButtonStyle = "-fx-background-color: #9b59b6; -fx-text-fill: white; -fx-font-size: 14px; -fx-padding: 10 20; -fx-cursor: hand; -fx-background-radius: 5;";
+        String rotateButtonHoverStyle = "-fx-background-color: #8e44ad; -fx-text-fill: white; -fx-font-size: 14px; -fx-padding: 10 20; -fx-cursor: hand; -fx-background-radius: 5;";
+        rotateButton.setStyle(rotateButtonStyle);
+        rotateButton.setOnMouseEntered(e -> rotateButton.setStyle(rotateButtonHoverStyle));
+        rotateButton.setOnMouseExited(e -> rotateButton.setStyle(rotateButtonStyle));
+        rotateButton.setOnAction(e -> {
+            if (gameBoard != null) {
+                gameBoard.rotateBoardVisual();
+            }
+        });
+
+        controls.getChildren().addAll(newGameButton, resetButton, helpButton, solutionButton, rotateButton);
         return controls;
     }
 

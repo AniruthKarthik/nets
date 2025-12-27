@@ -102,4 +102,8 @@ public class GameBoard extends VBox {
     public GameState getGameState() {
         return gameState;
     }
+
+    public void rotateBoardVisual() {
+        gridPane.setRotate(gridPane.getRotate() + 90);
+    }
 }
