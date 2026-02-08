@@ -11,6 +11,7 @@
 #include "cpp/JsonImporter.hpp"
 #include "cpp/JsonUtils.hpp"
 #include "cpp/Tile.hpp"
+#include "cpp/BacktrackingSolver.hpp"
 
 using namespace std;
 
@@ -81,6 +82,23 @@ int main(int argc, char *argv[]) {
       response["stats"] = {{"components", components},
                            {"looseEnds", looseEnds},
                            {"solved", solved}};
+    } else if (action == "solve_game") {
+      bool success = solveBacktracking(state.board);
+      response["solved"] = success;
+      if (success) {
+        // Return the solved grid state
+        json solvedGrid = json::array();
+        for (int r = 0; r < height; r++) {
+          json row = json::array();
+          for (int c = 0; c < width; c++) {
+            json tile;
+            tile["rotation"] = state.board.grid[r][c].rotation;
+            row.push_back(tile);
+          }
+          solvedGrid.push_back(row);
+        }
+        response["grid"] = solvedGrid;
+      }
     }
 
     cout << response << endl;
