@@ -38,6 +38,21 @@ This analysis evaluates the Time and Space Complexity of the NETS game project, 
 | evaluateBoard_greedy | O(N log N) | O(N) | Builds graph and runs DFS checks |
 | chooseBestMove_greedy | O(N^2 log N) | O(N) | Evaluates O(N) moves, each taking O(N log N) |
 
+### File: cpp/BacktrackingSolver.hpp
+| Function Name | Time Complexity | Space Complexity | Notes |
+|---|---|---|---|
+| checkConsistency | O(1) | O(1) | Checks 4 neighbors for port matching |
+| solveRecursive | O(k^N) | O(N) | k is rotations (max 4). Pruned by consistency checks. |
+| solveBacktracking_dac | O(k^N) | O(N) | Uses Merge Sort (D&C) to prioritize tiles. |
+
+### File: cpp/SortUtils.hpp
+| Function Name | Time Complexity | Space Complexity | Notes |
+|---|---|---|---|
+| getTilePriority_dac | O(1) | O(1) | Fixed neighbor checks |
+| merge_dac | O(N) | O(N) | Merge step of merge sort |
+| mergeSortRecursive_dac | O(N log N) | O(N) | Classic Divide & Conquer sorting |
+| sortTiles_dac | O(N log N) | O(N) | Sorts tiles for solver optimization |
+
 ### File: cpp/GraphBuilder.hpp
 | Function Name | Time Complexity | Space Complexity | Notes |
 |---|---|---|---|
@@ -95,9 +110,16 @@ This analysis evaluates the Time and Space Complexity of the NETS game project, 
     3.  Iterates through sorted moves. For each move, it builds a graph and evaluates it (O(N log N)).
     4.  Total: N x N log N = O(N^2 log N).
 
-### Sorting (Quick Sort)
-- **Time:** O(M log M)
-- **Explanation:** A custom Quick Sort implementation prioritizes moves based on tile complexity (Junctions > Corners > Straight).
+### Global Solver (Backtracking + D&C)
+- **Time:** O(k^N) worst case, significantly less in practice.
+- **Explanation:**
+    1.  Sorts tiles by constraint priority using **Merge Sort (Divide & Conquer)**: O(N log N).
+    2.  Uses **Backtracking** to search for a valid configuration.
+    3.  **Consistency Checks** (O(1) per step) prune the search tree early.
+
+### Sorting Algorithms
+- **Quick Sort:** O(M log M) average case. Used for CPU move prioritization.
+- **Merge Sort:** O(N log N) guaranteed. Used for tile prioritization in the solver. This follows the **Divide and Conquer** paradigm.
 
 ---
 
@@ -106,11 +128,12 @@ This analysis evaluates the Time and Space Complexity of the NETS game project, 
 ### Time Complexity
 - **Initialization:** O(N^2) due to Prims Algorithm implementation using ArrayList.
 - **Human Turn:** O(N log N) (UI updates + Stats from Engine).
-- **CPU Turn:** O(N^2 log N) (Greedy Strategy evaluation).
+- **CPU Turn (Greedy):** O(N^2 log N).
+- **Global Solve:** O(k^N) worst case, but $O(N \log N)$ for pre-sorting tiles.
 
 ### Space Complexity
 - **Overall:** O(N)
-- **Breakdown:** The Grid, Graph Adjacency List, and DFS recursion stacks all scale linearly with the number of tiles.
+- **Breakdown:** The Grid, Graph Adjacency List, and recursion stacks (DFS, QuickSort, MergeSort, Backtracking) all scale linearly with the number of tiles $N$ (or $\log N$ for stacks).
 
 ---
 

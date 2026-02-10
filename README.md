@@ -11,6 +11,7 @@ This project demonstrates the practical application of **Design and Analysis of 
 *   **Hybrid Architecture:** Java for the interactive UI and C++ for heavy algorithmic processing.
 *   **Procedural Level Generation:** Uses **Randomized Prim's Algorithm** to generate unique, solvable puzzles every time.
 *   **Smart CPU Opponent:** An AI player that uses a **Greedy Strategy** with heuristics to solve the puzzle.
+*   **Backtracking Solver:** A high-performance solver that uses **State-Space Search** and **Merge Sort (D&C)** to find guaranteed solutions for any level.
 *   **Real-time Graph Analysis:** Instant feedback on connectivity, loops, and loose ends using **DFS**.
 *   **Dynamic Difficulty:** Supports board sizes from 3x3 up to 15x15.
 
@@ -32,6 +33,8 @@ nets/
 │   ├── GameLogic.hpp      # Core game rules
 │   ├── GraphBuilder.hpp   # Adjacency List construction
 │   ├── CpuStrategy.hpp    # Greedy AI logic (QuickSort implemented here)
+│   ├── BacktrackingSolver.hpp # Recursive global solver
+│   ├── SortUtils.hpp      # Merge Sort (Divide & Conquer) for tiles
 │   └── ConnectivityCheck.hpp # DFS & Cycle Detection
 ├── netgame/               # Java Application Source Code
 │   ├── pom.xml            # Maven dependencies
@@ -59,10 +62,9 @@ nets/
     *   **Loose Ends:** Wires pointing to empty space or mismatched ports.
     *   **Cycles:** Closed loops, which are forbidden.
 
-### 3. CPU Strategy (C++)
-*   **Sorting (Quick Sort):** Prioritizes tiles by complexity (`T_JUNCTION` > `CORNER` > `STRAIGHT`).
-*   **Greedy Approach:** Evaluates all possible rotations for a tile and picks the one that minimizes the **Heuristic Cost**:
-    *   `Cost = (LooseEnds * 10) + (Components * 5) + (HasLoop ? 1000 : 0)`
+### 3. CPU & Solver Strategies (C++)
+*   **Greedy Approach (CPU):** Evaluates possible rotations and picks the one that minimizes the **Heuristic Cost**. It uses **Quick Sort** to prioritize moves.
+*   **Backtracking Solver:** Explores the state space using recursion and backtracking. It uses a **Divide and Conquer (Merge Sort)** strategy to sort tiles by constraint priority, significantly pruning the search space.
 
 ---
 
@@ -124,3 +126,4 @@ For a deeper dive into the architecture and execution flow, refer to:
 *   **Advanced AI:** Implementing Minimax or Alpha-Beta pruning for multi-turn planning.
 *   **Multiplayer:** Enabling network play via Sockets.
 *   **Optimization:** Replacing IPC with JNI (Java Native Interface) for zero-latency calls.
+*   **Mobile Port:** Exporting the core logic to Android/iOS using Kotlin Multiplatform.
