@@ -73,14 +73,14 @@ The CPU uses a **1-step lookahead Greedy Strategy**. It evaluates the immediate 
 *   **Power Propagation:** Java's `updatePoweredStatus` uses DFS to light up connected cables.
 
 **Where is a greedy strategy applied?**
-In `CpuStrategy.hpp`, the function `chooseBestMove`:
+In `CpuStrategy.hpp`, the function `chooseBestMove_greedy`:
 1.  Generates all possible rotations for every unlocked tile.
 2.  Simulates each move on a temporary board.
 3.  Calculates the "heuristic score" (cost).
 4.  **Greedily** selects the move with the lowest cost.
 
 **Is sorting used? If yes, where and why?**
-**Yes, Quick Sort.** Implemented in `CpuStrategy.hpp` (`quickSort_recursive`).
+**Yes, Quick Sort.** Implemented in `CpuStrategy.hpp` (`quickSort_recursive_greedy`).
 It sorts the list of potential moves based on **Tile Priority**:
 `T_JUNCTION (4) > CORNER (3) > STRAIGHT (2) > PC (1)`.
 This ensures the CPU evaluates complex tiles (which constrain the board most) before simple ones.
@@ -135,7 +135,7 @@ The `getNeighbor` function checks bounds `(0 <= r < height)` and `(0 <= c < widt
 4.  **Select:** Pick the move resulting in the lowest metric.
 
 **How does the CPU calculate risk?**
-It explicitly checks for **Closed Loops** using DFS. If a move creates a cycle, the `evaluateBoard` function returns a score > 1000, effectively marking it as a "bad move" unless no other options exist.
+It explicitly checks for **Closed Loops** using DFS. If a move creates a cycle, the `evaluateBoard_greedy` function returns a score > 1000, effectively marking it as a "bad move" unless no other options exist.
 
 **Does the CPU use any hidden or unfair information?**
 **No.** The CPU analyzes the current board state exactly as the player sees it. It does not peek at the "solution" generated during initialization.

@@ -13,7 +13,7 @@ using namespace std;
 
 // Time Complexity: O(V) where V is number of tiles
 // Space Complexity: O(V) to store moves
-inline vector<Move> generateMoves(const Board &board,
+inline vector<Move> generateMoves_greedy(const Board &board,
                                   pair<int, int> lastMovedTile) {
   vector<Move> moves;
 
@@ -34,7 +34,7 @@ inline vector<Move> generateMoves(const Board &board,
 }
 
 // Time Complexity: O(1) (checks 4 neighbors)
-inline int calculateLocalFit(const Board &board, const Move &move) {
+inline int calculateLocalFit_greedy(const Board &board, const Move &move) {
   Tile t = board.at(move.x, move.y);
   t.rotation = move.rotation;
 
@@ -83,16 +83,16 @@ inline void swapMoves(Move &a, Move &b) {
 // Partition function for Quick Sort
 // Time Complexity: O(M) where M is range [low, high]
 // Space Complexity: O(1)
-inline int quickSort_partition(vector<Move> &moves, int low, int high,
+inline int quickSort_partition_greedy(vector<Move> &moves, int low, int high,
                                const Board &board) {
   Move pivot = moves[high];
-  int pivotPriority = calculateLocalFit(board, pivot);
+  int pivotPriority = calculateLocalFit_greedy(board, pivot);
 
   int i = (low - 1);
 
   for (int j = low; j <= high - 1; j++) {
     // Sort in descending order of priority (higher fit first)
-    if (calculateLocalFit(board, moves[j]) > pivotPriority) {
+    if (calculateLocalFit_greedy(board, moves[j]) > pivotPriority) {
       i++;
       swapMoves(moves[i], moves[j]);
     }
@@ -104,26 +104,26 @@ inline int quickSort_partition(vector<Move> &moves, int low, int high,
 // Recursive Quick Sort function
 // Time Complexity: Best/Avg O(M log M), Worst O(M^2) where M is number of moves
 // Space Complexity: O(log M) stack space
-inline void quickSort_recursive(vector<Move> &moves, int low, int high,
+inline void quickSort_recursive_greedy(vector<Move> &moves, int low, int high,
                                 const Board &board) {
   if (low < high) {
-    int pi = quickSort_partition(moves, low, high, board);
-    quickSort_recursive(moves, low, pi - 1, board);
-    quickSort_recursive(moves, pi + 1, high, board);
+    int pi = quickSort_partition_greedy(moves, low, high, board);
+    quickSort_recursive_greedy(moves, low, pi - 1, board);
+    quickSort_recursive_greedy(moves, pi + 1, high, board);
   }
 }
 
 // Time Complexity: O(M log M)
 // Space Complexity: O(log M)
-inline void sortMoves(vector<Move> &moves, const Board &board) {
+inline void sortMoves_greedy(vector<Move> &moves, const Board &board) {
   if (!moves.empty()) {
-    quickSort_recursive(moves, 0, moves.size() - 1, board);
+    quickSort_recursive_greedy(moves, 0, moves.size() - 1, board);
   }
 }
 
 // Time Complexity: O(V log V) due to buildGraph
 // Space Complexity: O(V)
-inline int evaluateBoard(const Board &board) {
+inline int evaluateBoard_greedy(const Board &board) {
   Graph graph = buildGraph(board);
   int looseEnds = countLooseEnds(board);
   int components = countComponents(graph);
@@ -136,15 +136,15 @@ inline int evaluateBoard(const Board &board) {
 
 // Time Complexity: O(M * V log V) where M is number of moves (approx V), so
 // O(V^2 log V) Space Complexity: O(V)
-inline Move chooseBestMove(const Board &board, pair<int, int> lastMovedTile) {
-  vector<Move> moves = generateMoves(board, lastMovedTile);
+inline Move chooseBestMove_greedy(const Board &board, pair<int, int> lastMovedTile) {
+  vector<Move> moves = generateMoves_greedy(board, lastMovedTile);
   if (moves.empty()) {
-    moves = generateMoves(board, {-1, -1});
+    moves = generateMoves_greedy(board, {-1, -1});
     if (moves.empty())
       return {0, 0, 0};
   }
 
-  sortMoves(moves, board); // Sort the moves by local fit
+  sortMoves_greedy(moves, board); // Sort the moves by local fit
 
   int bestScore = INT_MAX;
   Move bestMove = moves[0];
@@ -153,7 +153,7 @@ inline Move chooseBestMove(const Board &board, pair<int, int> lastMovedTile) {
     Board tempBoard = board;
     applyMove(tempBoard, move);
 
-    int score = evaluateBoard(tempBoard);
+    int score = evaluateBoard_greedy(tempBoard);
 
     // Apply penalty to discourage undo loops, UNLESS it solves the puzzle.
     if (move.x == lastMovedTile.first && move.y == lastMovedTile.second) {

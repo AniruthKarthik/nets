@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
     json response;
 
     if (action == "get_cpu_move") {
-      Move bestMove = chooseBestMove(state.board, lastMovedTile);
+      Move bestMove = chooseBestMove_greedy(state.board, lastMovedTile);
       response["move"] = {{"row", bestMove.x},
                           {"col", bestMove.y},
                           {"rotation", bestMove.rotation}};
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
                            {"looseEnds", looseEnds},
                            {"solved", solved}};
     } else if (action == "solve_game") {
-      bool success = solveBacktracking(state.board);
+      bool success = solveBacktracking_dac(state.board);
       response["solved"] = success;
       if (success) {
         // Return the solved grid state

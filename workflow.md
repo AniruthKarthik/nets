@@ -119,3 +119,18 @@
     *   `Meta.status` becomes "SOLVED".
     *   `showWinMessage()` displays a Victory Dialog.
     *   Controls remain active only for "Reset" or "New Game".
+
+---
+
+## 11. EXACT SOLVER & DIVIDE AND CONQUER
+
+*   **Algorithm:** The C++ engine includes an **Exact Solver** using **Backtracking** to find guaranteed solutions for any board configuration.
+*   **Optimization (Divide and Conquer):**
+    *   **Merge Sort:** To optimize the search space, the engine employs a custom **Merge Sort** (`SortUtils.hpp`) to reorder tiles before solving.
+    *   **Strategy:** It breaks the set of tiles into smaller sub-problems, sorts them recursively, and merges them back together based on a **Heuristic Variable Ordering**.
+*   **Heuristic (Most Constrained Variable):**
+    *   Tiles are prioritized based on their "constraint level" (Degree, proximity to edges, and proximity to locked neighbors).
+    *   High-priority tiles (like junctions and corner tiles on edges) are solved first to prune the search tree early.
+*   **Workflow Integration:**
+    *   The `solve_game` action in `nets_engine.cpp` triggers this flow.
+    *   It transforms the board into a sorted list of variables, applies the backtracking search (`solveBacktracking_dac`), and returns the solved rotation for every tile.

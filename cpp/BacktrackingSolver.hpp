@@ -84,7 +84,7 @@ inline bool solveRecursive(int idx, const vector<pair<int, int>> &tiles, Board &
     return false;
 }
 
-inline bool solveBacktracking(Board &board) {
+inline bool solveBacktracking_dac(Board &board) {
     vector<pair<int, int>> tilesToSort;
     vector<vector<bool>> fixedMap(board.height, vector<bool>(board.width, false));
 
@@ -103,7 +103,7 @@ inline bool solveBacktracking(Board &board) {
     }
 
     // DIVIDE AND CONQUER: Sort the tiles to optimize backtracking
-    sortTiles(tilesToSort, board);
+    sortTiles_dac(tilesToSort, board);
 
     return solveRecursive(0, tilesToSort, board, fixedMap);
 }

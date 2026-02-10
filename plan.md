@@ -30,9 +30,9 @@ This plan outlines the integration of four key algorithmic concepts—Divide and
 *   **Algorithm:**
     *   **Merge Sort:** A classic D&C algorithm with $O(n \log n)$ complexity.
     *   **Divide:** Recursively split the array of tiles (or tile indices) into two halves.
-    *   **Conquer:** Recursively sort each sub-array.
-    *   **Combine:** Merge the two sorted sub-arrays into a single sorted list based on the MCV heuristic defined above.
-    *   **Usage:** This custom sort function will be called by the `BacktrackingSolver` before starting the recursion.
+    *   **Conquer:** Recursively sort each sub-array (`mergeSortRecursive_dac`).
+    *   **Combine:** Merge the two sorted sub-arrays into a single sorted list based on the MCV heuristic defined above (`merge_dac`).
+    *   **Usage:** This custom sort function (`sortTiles_dac`) will be called by the `BacktrackingSolver` before starting the recursion.
 
 ## 4. Dynamic Programming: Connectivity Memoization
 **Goal:** Drastically reduce the computational overhead of validity checks during the backtracking process.
@@ -49,6 +49,6 @@ This plan outlines the integration of four key algorithmic concepts—Divide and
 
 ## Summary of Execution Flow
 1.  **Request:** User asks for a "Hint" or "Auto-Solve".
-2.  **Sort (Divide & Conquer):** The engine creates a list of all tiles and sorts them using **Merge Sort** based on complexity constraints.
-3.  **Solver (Backtracking):** The engine starts the recursive backtracking process on the sorted list.
+2.  **Sort (Divide & Conquer):** The engine creates a list of all tiles and sorts them using **Merge Sort** (`sortTiles_dac`) based on complexity constraints.
+3.  **Solver (Backtracking):** The engine starts the recursive backtracking process (`solveBacktracking_dac`) on the sorted list.
 4.  **Check (Dynamic Programming):** At each step, the solver uses the **DP Cache** to instantly validate if a rotation fits with its neighbors.

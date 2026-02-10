@@ -23,7 +23,7 @@ Merge Sort is a classic Divide and Conquer algorithm. It recursively breaks the 
 
 ### 2. The Heuristic: Most Constrained Variable (MCV)
 
-The sorting logic (`getTilePriority` function) orders tiles based on how "difficult" they are to place.
+The sorting logic (`getTilePriority_dac` function) orders tiles based on how "difficult" they are to place.
 
 *   **Degree Heuristic:** Tiles with more wires (e.g., `CROSS`, `T_JUNCTION`) have fewer valid orientations than simple tiles (e.g., `STRAIGHT`). We solve high-degree tiles first.
 *   **Constraint Heuristic:**
@@ -38,10 +38,10 @@ Higher priority tiles are placed at the beginning of the list.
 
 ### 3. Integration with Backtracking (`cpp/BacktrackingSolver.hpp`)
 
-The `solveBacktracking` function orchestrates the process:
+The `solveBacktracking_dac` function orchestrates the process:
 
 1.  **Identify Variables:** It collects all non-locked, non-empty tiles into a list.
-2.  **Sort (Divide & Conquer):** It calls `sortTiles` (our Merge Sort implementation) to reorder this list based on the MCV heuristic.
+2.  **Sort (Divide & Conquer):** It calls `sortTiles_dac` (our Merge Sort implementation) to reorder this list based on the MCV heuristic.
 3.  **Solve (Recursion):** It iterates through the *sorted* list.
     *   For the current tile, it tries all valid rotations.
     *   `checkConsistency` verifies if the rotation fits with currently "fixed" neighbors (neighbors that are either locked or already visited/set by the solver).
@@ -50,8 +50,8 @@ The `solveBacktracking` function orchestrates the process:
 
 ## Code Structure
 
-*   **`cpp/SortUtils.hpp`**: Contains `mergeSortRecursive`, `merge`, and `getTilePriority`. This is the core D&C implementation.
-*   **`cpp/BacktrackingSolver.hpp`**: Contains the `solveBacktracking` entry point and `solveRecursive` logic. It uses `SortUtils` to prepare the data.
+*   **`cpp/SortUtils.hpp`**: Contains `mergeSortRecursive_dac`, `merge_dac`, and `getTilePriority_dac`. This is the core D&C implementation.
+*   **`cpp/BacktrackingSolver.hpp`**: Contains the `solveBacktracking_dac` entry point and `solveRecursive` logic. It uses `SortUtils` to prepare the data.
 *   **`nets_engine.cpp`**: Exposes the `solve_game` action to the external interface.
 
 ## Performance Impact

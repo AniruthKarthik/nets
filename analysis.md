@@ -29,14 +29,14 @@ This analysis evaluates the Time and Space Complexity of the NETS game project, 
 ### File: cpp/CpuStrategy.hpp
 | Function Name | Time Complexity | Space Complexity | Notes |
 |---|---|---|---|
-| generateMoves | O(N) | O(N) | Scans grid once, stores valid moves |
-| calculateLocalFit | O(1) | O(1) | Checks 4 neighbors |
+| generateMoves_greedy | O(N) | O(N) | Scans grid once, stores valid moves |
+| calculateLocalFit_greedy | O(1) | O(1) | Checks 4 neighbors |
 | swapMoves | O(1) | O(1) | Simple swap |
-| quickSort_partition | O(M) | O(1) | M is partition size |
-| quickSort_recursive | O(M log M) | O(log M) | Average case sorting |
-| sortMoves | O(M log M) | O(log M) | Calls recursive quick sort |
-| evaluateBoard | O(N log N) | O(N) | Builds graph and runs DFS checks |
-| chooseBestMove | O(N^2 log N) | O(N) | Evaluates O(N) moves, each taking O(N log N) |
+| quickSort_partition_greedy | O(M) | O(1) | M is partition size |
+| quickSort_recursive_greedy | O(M log M) | O(log M) | Average case sorting |
+| sortMoves_greedy | O(M log M) | O(log M) | Calls recursive quick sort |
+| evaluateBoard_greedy | O(N log N) | O(N) | Builds graph and runs DFS checks |
+| chooseBestMove_greedy | O(N^2 log N) | O(N) | Evaluates O(N) moves, each taking O(N log N) |
 
 ### File: cpp/GraphBuilder.hpp
 | Function Name | Time Complexity | Space Complexity | Notes |
