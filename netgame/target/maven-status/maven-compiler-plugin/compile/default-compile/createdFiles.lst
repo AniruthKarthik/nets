@@ -5,8 +5,8 @@ com/nets/model/Move.class
 com/nets/controller/GameController.class
 com/nets/model/Meta.class
 com/nets/view/TileView$1.class
-com/nets/view/GameBoard.class
 com/nets/model/Rules.class
+com/nets/view/GameBoard.class
 com/nets/NetsGame.class
 com/nets/model/TileType.class
 com/nets/view/TileView.class

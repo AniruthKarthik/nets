@@ -12,6 +12,9 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
+import javafx.stage.Screen;
+import javafx.geometry.Rectangle2D;
+
 public class GameBoard extends VBox {
     private GridPane gridPane;
     private TileView[][] tileViews;
@@ -27,7 +30,7 @@ public class GameBoard extends VBox {
 
         // Status label
         statusLabel = new Label();
-        statusLabel.setFont(Font.font("Arial", FontWeight.BOLD, 24));
+        statusLabel.setFont(Font.font("Arial", FontWeight.BOLD, 32)); // Larger font
         statusLabel.setTextFill(Color.WHITE);
 
         // Grid pane
@@ -40,10 +43,23 @@ public class GameBoard extends VBox {
 
         // Stats label
         statsLabel = new Label();
-        statsLabel.setFont(Font.font("Arial", FontWeight.NORMAL, 16));
+        statsLabel.setFont(Font.font("Arial", FontWeight.NORMAL, 20)); // Larger font
         statsLabel.setTextFill(Color.rgb(200, 200, 200));
 
         getChildren().addAll(statusLabel, gridPane, statsLabel);
+    }
+
+    private double calculateTileSize(int width, int height) {
+        Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
+        // Use more of the screen for the board
+        double availableWidth = screenBounds.getWidth() * 0.95;
+        double availableHeight = screenBounds.getHeight() * 0.82;
+
+        double sizeW = availableWidth / width;
+        double sizeH = availableHeight / height;
+
+        double size = Math.min(sizeW, sizeH);
+        return Math.max(30, Math.min(250, size)); // Increased max size to 250 for high-res
     }
 
     public void loadGameState(GameState state) {
@@ -54,10 +70,12 @@ public class GameBoard extends VBox {
         int width = state.getMeta().getWidth();
         tileViews = new TileView[height][width];
 
+        double tileSize = calculateTileSize(width, height);
+
         for (int row = 0; row < height; row++) {
             for (int col = 0; col < width; col++) {
                 Tile tile = state.getGrid()[row][col];
-                TileView tileView = new TileView(tile, row, col);
+                TileView tileView = new TileView(tile, row, col, tileSize);
                 tileViews[row][col] = tileView;
                 gridPane.add(tileView, col, row);
             }

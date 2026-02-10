@@ -686,6 +686,8 @@ public class GameController {
         alert.setContentText("Winner: " + winner + "!\n\n" +
                 "You've successfully connected all PCs to the power source!\n\n" +
                 "All tiles are connected in a single network.");
+        alert.getDialogPane().setPrefWidth(850);
+        alert.getDialogPane().setStyle("-fx-font-size: 24px;");
         alert.showAndWait();
     }
 
@@ -694,6 +696,8 @@ public class GameController {
         alert.setTitle("Error");
         alert.setHeaderText("An error occurred");
         alert.setContentText(message);
+        alert.getDialogPane().setPrefWidth(850);
+        alert.getDialogPane().setStyle("-fx-font-size: 24px;");
         alert.showAndWait();
     }
 
