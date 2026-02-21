@@ -124,13 +124,14 @@
 
 ## 11. EXACT SOLVER & DIVIDE AND CONQUER
 
-*   **Algorithm:** The C++ engine includes an **Exact Solver** using **Backtracking** to find guaranteed solutions for any board configuration.
-*   **Optimization (Divide and Conquer):**
-    *   **Merge Sort:** To optimize the search space, the engine employs a custom **Merge Sort** (`SortUtils.hpp`) to reorder tiles before solving.
-    *   **Strategy:** It breaks the set of tiles into smaller sub-problems, sorts them recursively, and merges them back together based on a **Heuristic Variable Ordering**.
-*   **Heuristic (Most Constrained Variable):**
+*   **Algorithm:** The C++ engine includes an **Exact Solver** using **Divide and Conquer** to find guaranteed solutions for any board configuration.
+*   **Divide and Conquer (Board Splitting):**
+    *   **Split:** The solver divides the board into sub-regions.
+    *   **Conquer:** It solves one region and uses cut-edge constraints to solve the other.
+    *   **Combine:** Regions are stitched by matching required connections along the cut.
+*   **Leaf Optimization (Merge Sort):**
+    *   Small regions are solved by recursive enumeration with **Merge Sort** (`SortUtils.hpp`) to order tiles.
     *   Tiles are prioritized based on their "constraint level" (Degree, proximity to edges, and proximity to locked neighbors).
-    *   High-priority tiles (like junctions and corner tiles on edges) are solved first to prune the search tree early.
 *   **Workflow Integration:**
     *   The `solve_game` action in `nets_engine.cpp` triggers this flow.
-    *   It transforms the board into a sorted list of variables, applies the backtracking search (`solveBacktracking_dac`), and returns the solved rotation for every tile.
+    *   It applies the D&C solver (`solve_dac`) and returns the solved rotation for every tile.

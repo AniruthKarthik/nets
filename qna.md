@@ -21,14 +21,14 @@ The project solves the problem of **constructing a valid Spanning Tree** (or a c
 *   **Greedy Algorithms:** Used by the CPU opponent to determine the optimal local move.
 *   **Minimum Spanning Tree (MST):** Randomized Prim's Algorithm is used for procedural level generation.
 *   **Sorting:** Quick Sort is used for moves, and Merge Sort (Divide & Conquer) is used for tile prioritization.
-*   **Backtracking:** A recursive solver with state restoration to find the global solution.
+*   **Recursive Enumeration:** A recursive solver with state restoration to find the global solution.
 *   **Heuristics:** Scoring functions to evaluate game states and prioritize tile placement.
 
 **How is this project relevant to Design and Analysis of Algorithms (DAA)?**
-It demonstrates the practical application of theoretical DAA concepts like **time complexity analysis**, **graph data structures** (Adjacency Lists), **recursion** (DFS, Merge Sort, Backtracking), and **optimization strategies** (Greedy and D&C approach) in a real-world software system.
+It demonstrates the practical application of theoretical DAA concepts like **time complexity analysis**, **graph data structures** (Adjacency Lists), **recursion** (DFS, Merge Sort, Recursive Enumeration), and **optimization strategies** (Greedy and D&C approach) in a real-world software system.
 
 **Project Summary:**
-A hybrid C++/Java puzzle game that utilizes graph algorithms, greedy strategies, and backtracking with divide-and-conquer sorting to solve network connectivity problems in real-time.
+A hybrid C++/Java puzzle game that utilizes graph algorithms, greedy strategies, and recursive enumeration with divide-and-conquer sorting to solve network connectivity problems in real-time.
 
 ---
 
@@ -38,7 +38,7 @@ A hybrid C++/Java puzzle game that utilizes graph algorithms, greedy strategies,
 A game provides an interactive visual representation of abstract graph algorithms. It allows users to "see" connectivity and cycles, making complex algorithmic states (like "Disjoint Sets" or "Cyclic Graphs") intuitively understandable.
 
 **Is the game turn-based? Why or why not?**
-**Yes.** The game implements a turn-based system (Human vs. CPU). This allows the C++ engine to perform computationally intensive calculations (analyzing potential board states or running the backtracking solver) between user moves without UI freezing.
+**Yes.** The game implements a turn-based system (Human vs. CPU). This allows the C++ engine to perform computationally intensive calculations (analyzing potential board states or running the D&C solver) between user moves without UI freezing.
 
 **How does scoring work in this version of NETS?**
 While there isn't a traditional "score," the game state is evaluated using a **cost function** (implemented in `CpuStrategy.hpp`):
@@ -56,7 +56,7 @@ The game ends with a "Victory" when:
 4.  **All Powered:** Connectivity traces back to the central `POWER` tile.
 
 **What limitations exist in the current game logic?**
-The CPU uses a **1-step lookahead Greedy Strategy**. It evaluates the immediate best move but does not plan multiple turns ahead (like Minimax). However, the system includes a **Global Backtracking Solver** that can be triggered to find a guaranteed solution.
+The CPU uses a **1-step lookahead Greedy Strategy**. It evaluates the immediate best move but does not plan multiple turns ahead (like Minimax). However, the system includes a **Global D&C Solver** that can be triggered to find a guaranteed solution.
 
 ---
 
@@ -66,9 +66,9 @@ The CPU uses a **1-step lookahead Greedy Strategy**. It evaluates the immediate 
 1.  **Depth First Search (DFS):** For traversing the graph to count connected components and detect cycles.
 2.  **Randomized Prim's Algorithm:** Used in `GameController.java` to generate a perfect maze (Spanning Tree) for the level.
 3.  **Greedy Best-First Search:** Used by the CPU to pick the optimal move.
-4.  **Backtracking Solver:** A recursive algorithm that explores the state space to find a valid solution.
+4.  **D&C Solver:** A recursive algorithm that explores the state space to find a valid solution.
 5.  **Quick Sort:** Used to sort potential CPU moves.
-6.  **Merge Sort (Divide & Conquer):** Used to prioritize tiles for the backtracking solver.
+6.  **Merge Sort (Divide & Conquer):** Used to prioritize tiles for the D&C solver.
 
 **Where is graph traversal used?**
 *   **Cycle Detection:** `hasClosedLoop` in `ConnectivityCheck.hpp` uses DFS to find back-edges.
@@ -82,8 +82,8 @@ In `CpuStrategy.hpp`, the function `chooseBestMove_greedy`:
 3.  Simulates the top moves on a temporary board.
 4.  **Greedily** selects the move with the lowest heuristic cost.
 
-**How does the Backtracking Solver work?**
-Implemented in `BacktrackingSolver.hpp`, it uses recursion to try all possible rotations for each tile. To optimize the search:
+**How does the D&C Solver work?**
+Implemented in `DacSolver.hpp`, it uses recursion to try all possible rotations for each tile. To optimize the search:
 1.  It uses **Constraint Satisfaction**: Before moving to the next tile, it checks if the current placement is consistent with its neighbors.
 2.  It uses **State Restoration**: If a path fails, it reverts the tile's rotation and tries the next option.
 3.  It uses **Divide and Conquer Sorting**: Tiles are sorted by priority (constraints) before solving.
@@ -94,7 +94,7 @@ Implemented in `BacktrackingSolver.hpp`, it uses recursion to try all possible r
 2.  **Merge Sort:** In `SortUtils.hpp` (`sortTiles_dac`) to sort tiles by their constraint priority (degree + edge location). This is a classic **Divide and Conquer** implementation.
 
 **Why was a greedy approach selected for the CPU?**
-A Greedy approach is computationally efficient ($O(N)$ moves to evaluate) compared to a full brute-force backtracking solver ($O(4^N)$), making it suitable for a responsive real-time game.
+A Greedy approach is computationally efficient ($O(N)$ moves to evaluate) compared to a full brute-force D&C solver ($O(4^N)$), making it suitable for a responsive real-time game.
 
 **How is risk or move evaluation calculated?**
 Risk is calculated via the linear heuristic:
@@ -163,13 +163,13 @@ Merge Sort is a stable, **Divide and Conquer** algorithm. It was chosen to sort 
 *   **Graph Build:** $O(N \log N)$ (due to `std::map` insertions).
 *   **DFS Traversal:** $O(V + E) \approx O(N)$.
 *   **CPU Move Selection:** $O(M \cdot N \log N)$ where $M$ is number of moves.
-*   **Backtracking Solver:** $O(k^N)$ in the worst case (exponential), but reduced significantly by the **priority sorting** and **consistency checks**.
+*   **D&C Solver:** $O(k^N)$ in the worst case (exponential), but reduced significantly by the **priority sorting** and **consistency checks**.
 *   **Sorting:** $O(N \log N)$ for both Merge and Quick Sort.
 
 **Space Complexity:**
 *   **Grid Storage:** $O(N)$.
 *   **Graph (Adjacency List):** $O(N)$.
-*   **Recursion Stack (DFS/Backtracking):** $O(N)$.
+*   **Recursion Stack (DFS/Recursive Enumeration):** $O(N)$.
 
 ---
 
@@ -189,7 +189,7 @@ Merge Sort is a stable, **Divide and Conquer** algorithm. It was chosen to sort 
 **Inter-Process Communication (IPC) via Standard I/O.**
 1.  Java serializes the `GameState` to **JSON**.
 2.  Spawns `nets_engine.exe` and pipes the JSON to `stdin`.
-3.  C++ engine processes (runs Greedy or Backtracking) and prints JSON to `stdout`.
+3.  C++ engine processes (runs Greedy or Recursive Enumeration) and prints JSON to `stdout`.
 4.  Java reads and deserializes the response.
 
 ---
@@ -197,10 +197,10 @@ Merge Sort is a stable, **Divide and Conquer** algorithm. It was chosen to sort 
 ### 10. TEST CASES & EDGE CASES
 
 **What happens if the puzzle is unsolvable?**
-The Backtracking Solver will explore all possibilities and return `false`, allowing the system to notify the user.
+The D&C Solver will explore all possibilities and return `false`, allowing the system to notify the user.
 
 **How are boundary conditions handled?**
-The `GraphBuilder` and `BacktrackingSolver` explicitly check array bounds.
+The `GraphBuilder` and `DacSolver` explicitly check array bounds.
 
 ---
 
@@ -208,7 +208,7 @@ The `GraphBuilder` and `BacktrackingSolver` explicitly check array bounds.
 
 **Where can these algorithms be applied?**
 *   **Network Routing:** Finding paths in computer networks.
-*   **Circuit Design:** Routing tracks on a PCB (Backtracking is common here).
+*   **Circuit Design:** Routing tracks on a PCB (Recursive Enumeration is common here).
 *   **Scheduling:** Constraint Satisfaction Problems (CSPs).
 
 ---
@@ -228,7 +228,7 @@ The `GraphBuilder` and `BacktrackingSolver` explicitly check array bounds.
 ### 13. FINAL DEFENSE CONCLUSION
 
 **Why is this a strong academic DAA project?**
-It bridges **theory** (Graphs, DFS, Quick Sort, Merge Sort, Backtracking) and **practice** (Hybrid Architecture, JSON/IPC, GUI). It demonstrates multiple algorithmic paradigms: **Greedy**, **Divide & Conquer**, and **State-Space Search (Backtracking)**.
+It bridges **theory** (Graphs, DFS, Quick Sort, Merge Sort, Recursive Enumeration) and **practice** (Hybrid Architecture, JSON/IPC, GUI). It demonstrates multiple algorithmic paradigms: **Greedy**, **Divide & Conquer**, and **State-Space Search (Recursive Enumeration)**.
 
 **What makes this project unique?**
 The use of two distinct sorting algorithms (Quick and Merge) for different optimization goals and the integration of a high-performance C++ solver with a JavaFX frontend.

@@ -11,7 +11,7 @@
 #include "cpp/JsonImporter.hpp"
 #include "cpp/JsonUtils.hpp"
 #include "cpp/Tile.hpp"
-#include "cpp/BacktrackingSolver.hpp"
+#include "cpp/DacSolver.hpp"
 
 using namespace std;
 
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
                            {"looseEnds", looseEnds},
                            {"solved", solved}};
     } else if (action == "solve_game") {
-      bool success = solveBacktracking_dac(state.board);
+      bool success = solve_dac(state.board);
       response["solved"] = success;
       if (success) {
         // Return the solved grid state

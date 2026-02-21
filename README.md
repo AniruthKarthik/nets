@@ -11,7 +11,7 @@ This project demonstrates the practical application of **Design and Analysis of 
 *   **Hybrid Architecture:** Java for the interactive UI and C++ for heavy algorithmic processing.
 *   **Procedural Level Generation:** Uses **Randomized Prim's Algorithm** to generate unique, solvable puzzles every time.
 *   **Smart CPU Opponent:** An AI player that uses a **Greedy Strategy** with heuristics to solve the puzzle.
-*   **Backtracking Solver:** A high-performance solver that uses **State-Space Search** and **Merge Sort (D&C)** to find guaranteed solutions for any level.
+*   **D&C Solver:** A high-performance solver that uses **recursive enumeration** and **Merge Sort (D&C)** to find guaranteed solutions for any level.
 *   **Real-time Graph Analysis:** Instant feedback on connectivity, loops, and loose ends using **DFS**.
 *   **Dynamic Difficulty:** Supports board sizes from 3x3 up to 15x15.
 
@@ -33,7 +33,7 @@ nets/
 │   ├── GameLogic.hpp      # Core game rules
 │   ├── GraphBuilder.hpp   # Adjacency List construction
 │   ├── CpuStrategy.hpp    # Greedy AI logic (QuickSort implemented here)
-│   ├── BacktrackingSolver.hpp # Recursive global solver
+│   ├── DacSolver.hpp       # Divide-and-conquer global solver
 │   ├── SortUtils.hpp      # Merge Sort (Divide & Conquer) for tiles
 │   └── ConnectivityCheck.hpp # DFS & Cycle Detection
 ├── netgame/               # Java Application Source Code
@@ -64,7 +64,7 @@ nets/
 
 ### 3. CPU & Solver Strategies (C++)
 *   **Greedy Approach (CPU):** Evaluates possible rotations and picks the one that minimizes the **Heuristic Cost**. It uses **Quick Sort** to prioritize moves.
-*   **Backtracking Solver:** Explores the state space using recursion and backtracking. It uses a **Divide and Conquer (Merge Sort)** strategy to sort tiles by constraint priority, significantly pruning the search space.
+*   **D&C Solver:** Explores the state space using recursion and enumeration. It uses a **Divide and Conquer (Merge Sort)** strategy to sort tiles by constraint priority, significantly pruning the search space.
 
 ---
 

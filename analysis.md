@@ -38,12 +38,12 @@ This analysis evaluates the Time and Space Complexity of the NETS game project, 
 | evaluateBoard_greedy | O(N log N) | O(N) | Builds graph and runs DFS checks |
 | chooseBestMove_greedy | O(N^2 log N) | O(N) | Evaluates O(N) moves, each taking O(N log N) |
 
-### File: cpp/BacktrackingSolver.hpp
+### File: cpp/DacSolver.hpp
 | Function Name | Time Complexity | Space Complexity | Notes |
 |---|---|---|---|
-| checkConsistency | O(1) | O(1) | Checks 4 neighbors for port matching |
-| solveRecursive | O(k^N) | O(N) | k is rotations (max 4). Pruned by consistency checks. |
-| solveBacktracking_dac | O(k^N) | O(N) | Uses Merge Sort (D&C) to prioritize tiles. |
+| checkConsistency_dac | O(1) | O(1) | Checks 4 neighbors for port matching and cut constraints |
+| solveRegionEnumerate_dac | O(k^N) | O(N) | k is rotations (max 4). Pruned by consistency checks. |
+| solve_dac | O(k^N) | O(N) | Splits the board and combines solutions via cut-edge constraints. |
 
 ### File: cpp/SortUtils.hpp
 | Function Name | Time Complexity | Space Complexity | Notes |
@@ -110,11 +110,11 @@ This analysis evaluates the Time and Space Complexity of the NETS game project, 
     3.  Iterates through sorted moves. For each move, it builds a graph and evaluates it (O(N log N)).
     4.  Total: N x N log N = O(N^2 log N).
 
-### Global Solver (Backtracking + D&C)
+### Global Solver (Recursive Enumeration + D&C)
 - **Time:** O(k^N) worst case, significantly less in practice.
 - **Explanation:**
     1.  Sorts tiles by constraint priority using **Merge Sort (Divide & Conquer)**: O(N log N).
-    2.  Uses **Backtracking** to search for a valid configuration.
+    2.  Uses **Recursive Enumeration** to search for a valid configuration.
     3.  **Consistency Checks** (O(1) per step) prune the search tree early.
 
 ### Sorting Algorithms
@@ -133,7 +133,7 @@ This analysis evaluates the Time and Space Complexity of the NETS game project, 
 
 ### Space Complexity
 - **Overall:** O(N)
-- **Breakdown:** The Grid, Graph Adjacency List, and recursion stacks (DFS, QuickSort, MergeSort, Backtracking) all scale linearly with the number of tiles $N$ (or $\log N$ for stacks).
+- **Breakdown:** The Grid, Graph Adjacency List, and recursion stacks (DFS, QuickSort, MergeSort, Recursive Enumeration) all scale linearly with the number of tiles $N$ (or $\log N$ for stacks).
 
 ---
 
