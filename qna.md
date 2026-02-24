@@ -22,6 +22,7 @@ The project solves the problem of **constructing a valid Spanning Tree** (or a c
 *   **Minimum Spanning Tree (MST):** Randomized Prim's Algorithm is used for procedural level generation.
 *   **Sorting:** Quick Sort is used for moves, and Merge Sort (Divide & Conquer) is used for tile prioritization.
 *   **Recursive Enumeration:** A recursive solver with state restoration to find the global solution.
+*   **BT (bt) and DP (dp):** Optional variants that perform recursive search, with `dp` using cached port masks. They are separate implementations.
 *   **Heuristics:** Scoring functions to evaluate game states and prioritize tile placement.
 
 **How is this project relevant to Design and Analysis of Algorithms (DAA)?**
@@ -56,7 +57,7 @@ The game ends with a "Victory" when:
 4.  **All Powered:** Connectivity traces back to the central `POWER` tile.
 
 **What limitations exist in the current game logic?**
-The CPU uses a **1-step lookahead Greedy Strategy**. It evaluates the immediate best move but does not plan multiple turns ahead (like Minimax). However, the system includes a **Global D&C Solver** that can be triggered to find a guaranteed solution.
+The CPU uses a **1-step lookahead Greedy Strategy**. It evaluates the immediate best move but does not plan multiple turns ahead (like Minimax). However, the system includes a **Global DP Solver** that can be triggered to find a guaranteed solution. Optional solvers (`solve_bt`, `solve_dac`) also exist for comparison and are not combined.
 
 ---
 
@@ -66,9 +67,11 @@ The CPU uses a **1-step lookahead Greedy Strategy**. It evaluates the immediate 
 1.  **Depth First Search (DFS):** For traversing the graph to count connected components and detect cycles.
 2.  **Randomized Prim's Algorithm:** Used in `GameController.java` to generate a perfect maze (Spanning Tree) for the level.
 3.  **Greedy Best-First Search:** Used by the CPU to pick the optimal move.
-4.  **D&C Solver:** A recursive algorithm that explores the state space to find a valid solution.
-5.  **Quick Sort:** Used to sort potential CPU moves.
-6.  **Merge Sort (Divide & Conquer):** Used to prioritize tiles for the D&C solver.
+4.  **DP Solver:** A recursive algorithm that explores the state space using cached port masks.
+5.  **D&C Solver:** A recursive algorithm that splits the board and combines sub-solutions via cut-edge constraints.
+6.  **Quick Sort:** Used to sort potential CPU moves.
+7.  **Merge Sort (Divide & Conquer):** Used to prioritize tiles for the D&C solver.
+8.  **BT Solver:** A direct recursive search used for comparison.
 
 **Where is graph traversal used?**
 *   **Cycle Detection:** `hasClosedLoop` in `ConnectivityCheck.hpp` uses DFS to find back-edges.
@@ -82,11 +85,17 @@ In `CpuStrategy.hpp`, the function `chooseBestMove_greedy`:
 3.  Simulates the top moves on a temporary board.
 4.  **Greedily** selects the move with the lowest heuristic cost.
 
-**How does the D&C Solver work?**
-Implemented in `DacSolver.hpp`, it uses recursion to try all possible rotations for each tile. To optimize the search:
+**How does the DP Solver work?**
+Implemented in `DpSolver.hpp`, it uses recursive enumeration and cached port masks to speed neighbor consistency checks:
 1.  It uses **Constraint Satisfaction**: Before moving to the next tile, it checks if the current placement is consistent with its neighbors.
-2.  It uses **State Restoration**: If a path fails, it reverts the tile's rotation and tries the next option.
-3.  It uses **Divide and Conquer Sorting**: Tiles are sorted by priority (constraints) before solving.
+2.  It uses **Cached Port Masks**: Neighbor connection checks are accelerated by precomputed bitmasks.
+3.  It uses **State Restoration**: If a path fails, it reverts the tile's rotation and tries the next option.
+
+**How does the D&C Solver work?**
+Implemented in `DacSolver.hpp`, it recursively splits the board into sub-regions and combines them using cut-edge constraints. Leaf regions use Merge Sort (MCV) ordering before enumeration.
+
+**What are the solver variants?**
+`solve_bt` performs direct recursive search with neighbor consistency checks. `solve_dac` performs board splitting with cut-edge constraints. They are separate solvers.
 
 **Is sorting used? If yes, where and why?**
 **Yes, two different sorting algorithms are used:**
@@ -94,7 +103,7 @@ Implemented in `DacSolver.hpp`, it uses recursion to try all possible rotations 
 2.  **Merge Sort:** In `SortUtils.hpp` (`sortTiles_dac`) to sort tiles by their constraint priority (degree + edge location). This is a classic **Divide and Conquer** implementation.
 
 **Why was a greedy approach selected for the CPU?**
-A Greedy approach is computationally efficient ($O(N)$ moves to evaluate) compared to a full brute-force D&C solver ($O(4^N)$), making it suitable for a responsive real-time game.
+A Greedy approach is computationally efficient ($O(N)$ moves to evaluate) compared to exhaustive solvers ($O(4^N)$), making it suitable for a responsive real-time game.
 
 **How is risk or move evaluation calculated?**
 Risk is calculated via the linear heuristic:
@@ -163,7 +172,7 @@ Merge Sort is a stable, **Divide and Conquer** algorithm. It was chosen to sort 
 *   **Graph Build:** $O(N \log N)$ (due to `std::map` insertions).
 *   **DFS Traversal:** $O(V + E) \approx O(N)$.
 *   **CPU Move Selection:** $O(M \cdot N \log N)$ where $M$ is number of moves.
-*   **D&C Solver:** $O(k^N)$ in the worst case (exponential), but reduced significantly by the **priority sorting** and **consistency checks**.
+*   **DP Solver:** $O(k^N)$ in the worst case (exponential), but reduced significantly by the **priority sorting** and **consistency checks**.
 *   **Sorting:** $O(N \log N)$ for both Merge and Quick Sort.
 
 **Space Complexity:**
@@ -197,7 +206,7 @@ Merge Sort is a stable, **Divide and Conquer** algorithm. It was chosen to sort 
 ### 10. TEST CASES & EDGE CASES
 
 **What happens if the puzzle is unsolvable?**
-The D&C Solver will explore all possibilities and return `false`, allowing the system to notify the user.
+The DP Solver will explore all possibilities and return `false`, allowing the system to notify the user.
 
 **How are boundary conditions handled?**
 The `GraphBuilder` and `DacSolver` explicitly check array bounds.

@@ -5,6 +5,7 @@
 // Include the combined header-only files
 #include "cpp/ConnectivityCheck.hpp"
 #include "cpp/CpuStrategy.hpp"
+#include "cpp/DpSolver.hpp"
 #include "cpp/GameLogic.hpp"
 #include "cpp/GraphBuilder.hpp"
 #include "cpp/JsonExporter.hpp"
@@ -83,7 +84,7 @@ int main(int argc, char *argv[]) {
                            {"looseEnds", looseEnds},
                            {"solved", solved}};
     } else if (action == "solve_game") {
-      bool success = solve_dac(state.board);
+      bool success = solve_dp(state.board);
       response["solved"] = success;
       if (success) {
         // Return the solved grid state

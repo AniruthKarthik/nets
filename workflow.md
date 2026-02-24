@@ -124,14 +124,19 @@
 
 ## 11. EXACT SOLVER & DIVIDE AND CONQUER
 
-*   **Algorithm:** The C++ engine includes an **Exact Solver** using **Divide and Conquer** to find guaranteed solutions for any board configuration.
+*   **Algorithm:** The C++ engine includes an **Exact Solver** using **Divide and Conquer** to find guaranteed solutions for any board configuration (optional).
 *   **Divide and Conquer (Board Splitting):**
     *   **Split:** The solver divides the board into sub-regions.
     *   **Conquer:** It solves one region and uses cut-edge constraints to solve the other.
     *   **Combine:** Regions are stitched by matching required connections along the cut.
+    *   **Entry Point:** `solve_dac` in `cpp/DacSolver.hpp` (optional).
 *   **Leaf Optimization (Merge Sort):**
     *   Small regions are solved by recursive enumeration with **Merge Sort** (`SortUtils.hpp`) to order tiles.
     *   Tiles are prioritized based on their "constraint level" (Degree, proximity to edges, and proximity to locked neighbors).
 *   **Workflow Integration:**
-    *   The `solve_game` action in `nets_engine.cpp` triggers this flow.
-    *   It applies the D&C solver (`solve_dac`) and returns the solved rotation for every tile.
+    *   The `solve_game` action in `nets_engine.cpp` triggers the default DP solver.
+    *   It applies `solve_dp` and returns the solved rotation for every tile.
+
+Other solver variants exist for testing and comparison and are kept separate:
+*   `solve_bt`: recursive search with direct consistency checks.
+*   `solve_dac`: board-splitting solver with cut-edge constraints.

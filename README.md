@@ -11,7 +11,9 @@ This project demonstrates the practical application of **Design and Analysis of 
 *   **Hybrid Architecture:** Java for the interactive UI and C++ for heavy algorithmic processing.
 *   **Procedural Level Generation:** Uses **Randomized Prim's Algorithm** to generate unique, solvable puzzles every time.
 *   **Smart CPU Opponent:** An AI player that uses a **Greedy Strategy** with heuristics to solve the puzzle.
-*   **D&C Solver:** A high-performance solver that uses **recursive enumeration** and **Merge Sort (D&C)** to find guaranteed solutions for any level.
+*   **DP Solver (Default):** A high-performance solver that uses **recursive enumeration** with cached port masks to speed consistency checks.
+*   **D&C Solver (Optional):** A board-splitting solver that uses **Divide and Conquer** plus Merge Sort ordering in leaf regions.
+*   **Optional Solver Variants:** Alternate solvers `solve_bt` (direct recursion) and `solve_dac` (board splitting). The default is `solve_dp`.
 *   **Real-time Graph Analysis:** Instant feedback on connectivity, loops, and loose ends using **DFS**.
 *   **Dynamic Difficulty:** Supports board sizes from 3x3 up to 15x15.
 
@@ -33,7 +35,9 @@ nets/
 │   ├── GameLogic.hpp      # Core game rules
 │   ├── GraphBuilder.hpp   # Adjacency List construction
 │   ├── CpuStrategy.hpp    # Greedy AI logic (QuickSort implemented here)
-│   ├── DacSolver.hpp       # Divide-and-conquer global solver
+│   ├── DacSolver.hpp       # Divide-and-conquer global solver (optional)
+│   ├── BtSolver.hpp        # BT solver (bt)
+│   ├── DpSolver.hpp        # DP solver (dp, default)
 │   ├── SortUtils.hpp      # Merge Sort (Divide & Conquer) for tiles
 │   └── ConnectivityCheck.hpp # DFS & Cycle Detection
 ├── netgame/               # Java Application Source Code
@@ -64,7 +68,10 @@ nets/
 
 ### 3. CPU & Solver Strategies (C++)
 *   **Greedy Approach (CPU):** Evaluates possible rotations and picks the one that minimizes the **Heuristic Cost**. It uses **Quick Sort** to prioritize moves.
-*   **D&C Solver:** Explores the state space using recursion and enumeration. It uses a **Divide and Conquer (Merge Sort)** strategy to sort tiles by constraint priority, significantly pruning the search space.
+*   **DP Solver:** Explores the state space using recursion and enumeration. It uses cached port masks to speed constraint evaluation.
+*   **D&C Solver:** Splits the board into sub-regions and combines them via cut-edge constraints; leaf regions are ordered with Merge Sort (MCV).
+*   **Solver Variants (bt/dp):** `solve_bt` uses direct consistency checks, and `solve_dp` uses cached port masks to speed constraint evaluation. These are separate solvers and are not mixed.
+*   **Solver Variant (D&C):** `solve_dac` splits the board and combines sub-solutions via cut-edge constraints.
 
 ---
 

@@ -45,6 +45,21 @@ This analysis evaluates the Time and Space Complexity of the NETS game project, 
 | solveRegionEnumerate_dac | O(k^N) | O(N) | k is rotations (max 4). Pruned by consistency checks. |
 | solve_dac | O(k^N) | O(N) | Splits the board and combines solutions via cut-edge constraints. |
 
+### File: cpp/BtSolver.hpp
+| Function Name | Time Complexity | Space Complexity | Notes |
+|---|---|---|---|
+| checkConsistency_bt | O(1) | O(1) | Checks 4 neighbors for port matching |
+| solveRecursive_bt | O(k^N) | O(N) | k is rotations (max 4). Pruned by consistency checks. |
+| solve_bt | O(k^N) | O(N) | Direct recursive search across all tiles (separate solver) |
+
+### File: cpp/DpSolver.hpp
+| Function Name | Time Complexity | Space Complexity | Notes |
+|---|---|---|---|
+| portMaskFromTile_dp | O(1) | O(1) | Cached port masks for TileType + rotation |
+| checkConsistency_dp | O(1) | O(1) | Uses cached masks for constraint checks |
+| solveRecursive_dp | O(k^N) | O(N) | k is rotations (max 4). Pruned by consistency checks. |
+| solve_dp | O(k^N) | O(N) | Direct recursive search with cached checks (separate solver) |
+
 ### File: cpp/SortUtils.hpp
 | Function Name | Time Complexity | Space Complexity | Notes |
 |---|---|---|---|
@@ -110,12 +125,19 @@ This analysis evaluates the Time and Space Complexity of the NETS game project, 
     3.  Iterates through sorted moves. For each move, it builds a graph and evaluates it (O(N log N)).
     4.  Total: N x N log N = O(N^2 log N).
 
-### Global Solver (Recursive Enumeration + D&C)
+### Global Solver (DP)
 - **Time:** O(k^N) worst case, significantly less in practice.
 - **Explanation:**
-    1.  Sorts tiles by constraint priority using **Merge Sort (Divide & Conquer)**: O(N log N).
-    2.  Uses **Recursive Enumeration** to search for a valid configuration.
-    3.  **Consistency Checks** (O(1) per step) prune the search tree early.
+    1.  Uses **Recursive Enumeration** to search for a valid configuration.
+    2.  **Cached Port Masks** (O(1) per step) speed consistency checks.
+    3.  **Consistency Checks** prune the search tree early.
+
+### Optional Solver (D&C)
+- **Time:** O(k^N) worst case, significantly less in practice.
+- **Explanation:**
+    1.  Splits the board into sub-regions (Divide and Conquer).
+    2.  Uses cut-edge constraints to combine sub-solutions.
+    3.  Leaf regions use **Merge Sort (Divide & Conquer)** to order tiles before enumeration.
 
 ### Sorting Algorithms
 - **Quick Sort:** O(M log M) average case. Used for CPU move prioritization.
@@ -129,7 +151,7 @@ This analysis evaluates the Time and Space Complexity of the NETS game project, 
 - **Initialization:** O(N^2) due to Prims Algorithm implementation using ArrayList.
 - **Human Turn:** O(N log N) (UI updates + Stats from Engine).
 - **CPU Turn (Greedy):** O(N^2 log N).
-- **Global Solve:** O(k^N) worst case, but $O(N \log N)$ for pre-sorting tiles.
+- **Global Solve (DP):** O(k^N) worst case.
 
 ### Space Complexity
 - **Overall:** O(N)
