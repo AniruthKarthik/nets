@@ -11,7 +11,7 @@ This project demonstrates the practical application of **Design and Analysis of 
 *   **Hybrid Architecture:** Java for the interactive UI and C++ for heavy algorithmic processing.
 *   **Procedural Level Generation:** Uses **Randomized Prim's Algorithm** to generate unique, solvable puzzles every time.
 *   **Smart CPU Opponent:** An AI player that uses a **Greedy Strategy** with heuristics to solve the puzzle.
-*   **DP Solver (Default):** A high-performance solver that uses **recursive enumeration** with cached port masks to speed consistency checks.
+*   **DP Solver (Default):** A memoized dynamic-programming solver with a compact frontier state and cached port masks.
 *   **D&C Solver (Optional):** A board-splitting solver that uses **Divide and Conquer** plus Merge Sort ordering in leaf regions.
 *   **Optional Solver Variants:** Alternate solvers `solve_bt` (direct recursion) and `solve_dac` (board splitting). The default is `solve_dp`.
 *   **Real-time Graph Analysis:** Instant feedback on connectivity, loops, and loose ends using **DFS**.
@@ -68,9 +68,9 @@ nets/
 
 ### 3. CPU & Solver Strategies (C++)
 *   **Greedy Approach (CPU):** Evaluates possible rotations and picks the one that minimizes the **Heuristic Cost**. It uses **Quick Sort** to prioritize moves.
-*   **DP Solver:** Explores the state space using recursion and enumeration. It uses cached port masks to speed constraint evaluation.
+*   **DP Solver:** Explores the state space using memoized recursion and a compact frontier state. It uses cached port masks to speed constraint evaluation.
 *   **D&C Solver:** Splits the board into sub-regions and combines them via cut-edge constraints; leaf regions are ordered with Merge Sort (MCV).
-*   **Solver Variants (bt/dp):** `solve_bt` uses direct consistency checks, and `solve_dp` uses cached port masks to speed constraint evaluation. These are separate solvers and are not mixed.
+*   **Solver Variants (bt/dp):** `solve_bt` uses direct consistency checks, and `solve_dp` uses memoization with cached port masks. These are separate solvers and are not mixed.
 *   **Solver Variant (D&C):** `solve_dac` splits the board and combines sub-solutions via cut-edge constraints.
 
 ---

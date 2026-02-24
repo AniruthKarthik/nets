@@ -55,10 +55,10 @@ This analysis evaluates the Time and Space Complexity of the NETS game project, 
 ### File: cpp/DpSolver.hpp
 | Function Name | Time Complexity | Space Complexity | Notes |
 |---|---|---|---|
-| portMaskFromTile_dp | O(1) | O(1) | Cached port masks for TileType + rotation |
-| checkConsistency_dp | O(1) | O(1) | Uses cached masks for constraint checks |
-| solveRecursive_dp | O(k^N) | O(N) | k is rotations (max 4). Pruned by consistency checks. |
-| solve_dp | O(k^N) | O(N) | Direct recursive search with cached checks (separate solver) |
+| portMaskForTile | O(1) | O(1) | Cached port masks for TileType + rotation |
+| rotationOptions | O(1) | O(1) | Rotation enumeration for a tile |
+| solveFrom | Exponential (memoized) | O(S) | S is number of DP states; memoized recursion over frontier state |
+| solve_dp | Exponential (memoized) | O(S) | DP solver with memoization and compact frontier state |
 
 ### File: cpp/SortUtils.hpp
 | Function Name | Time Complexity | Space Complexity | Notes |

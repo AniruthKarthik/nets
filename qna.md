@@ -67,7 +67,7 @@ The CPU uses a **1-step lookahead Greedy Strategy**. It evaluates the immediate 
 1.  **Depth First Search (DFS):** For traversing the graph to count connected components and detect cycles.
 2.  **Randomized Prim's Algorithm:** Used in `GameController.java` to generate a perfect maze (Spanning Tree) for the level.
 3.  **Greedy Best-First Search:** Used by the CPU to pick the optimal move.
-4.  **DP Solver:** A recursive algorithm that explores the state space using cached port masks.
+4.  **DP Solver:** A memoized dynamic-programming solver that explores the state space with a compact frontier state.
 5.  **D&C Solver:** A recursive algorithm that splits the board and combines sub-solutions via cut-edge constraints.
 6.  **Quick Sort:** Used to sort potential CPU moves.
 7.  **Merge Sort (Divide & Conquer):** Used to prioritize tiles for the D&C solver.
@@ -86,10 +86,10 @@ In `CpuStrategy.hpp`, the function `chooseBestMove_greedy`:
 4.  **Greedily** selects the move with the lowest heuristic cost.
 
 **How does the DP Solver work?**
-Implemented in `DpSolver.hpp`, it uses recursive enumeration and cached port masks to speed neighbor consistency checks:
-1.  It uses **Constraint Satisfaction**: Before moving to the next tile, it checks if the current placement is consistent with its neighbors.
-2.  It uses **Cached Port Masks**: Neighbor connection checks are accelerated by precomputed bitmasks.
-3.  It uses **State Restoration**: If a path fails, it reverts the tile's rotation and tries the next option.
+Implemented in `DpSolver.hpp`, it uses memoized recursion with a compact frontier state:
+1.  It defines a **State** using the tile index, a per-column north-connection mask, and the expected west connection.
+2.  It uses **Cached Port Masks** to test rotations quickly.
+3.  It memoizes each state to avoid recomputation and reuses results across equivalent subproblems.
 
 **How does the D&C Solver work?**
 Implemented in `DacSolver.hpp`, it recursively splits the board into sub-regions and combines them using cut-edge constraints. Leaf regions use Merge Sort (MCV) ordering before enumeration.
@@ -172,7 +172,7 @@ Merge Sort is a stable, **Divide and Conquer** algorithm. It was chosen to sort 
 *   **Graph Build:** $O(N \log N)$ (due to `std::map` insertions).
 *   **DFS Traversal:** $O(V + E) \approx O(N)$.
 *   **CPU Move Selection:** $O(M \cdot N \log N)$ where $M$ is number of moves.
-*   **DP Solver:** $O(k^N)$ in the worst case (exponential), but reduced significantly by the **priority sorting** and **consistency checks**.
+*   **DP Solver:** Exponential in the worst case, but reduced significantly by memoization and frontier-state pruning.
 *   **Sorting:** $O(N \log N)$ for both Merge and Quick Sort.
 
 **Space Complexity:**
