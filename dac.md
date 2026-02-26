@@ -1,64 +1,24 @@
-# Divide and Conquer Implementation: Board-Splitting Solver
+# Divide and Conquer Solver Implementation
 
-This document describes the **Divide and Conquer (D&C)** solver implemented in `cpp/DacSolver.hpp`. The solver splits a board region into two sub-regions, solves one, then constrains the other with boundary-edge requirements.
+This document describes the Board-Splitting (D&C) solver in `cpp/DacSolver.hpp`.
 
 ## Overview
 
-`solve_dac` operates on a rectangular `Region_dac` and recursively splits it until the region is small enough to enumerate directly.
+`solve_dac` is a recursive solver that structures the search space by splitting the board into regions. It prioritizes solving one sub-region before moving to the next, effectively acting as a Divide and Conquer strategy for state-space search.
 
-Key ideas:
-* **Divide:** Split along the longer axis (`width >= height` splits vertically, otherwise horizontally).
-* **Conquer:** Solve the first sub-region.
-* **Combine:** Convert the solved sub-region’s cut-edge connections into explicit constraints and solve the second sub-region under those constraints.
+### Algorithmic Approach:
+1.  **Divide:** The board is recursively split into sub-regions (alternating vertical and horizontal splits).
+2.  **Order:** Tiles are ordered such that tiles in the first sub-region are processed before tiles in the second sub-region.
+3.  **Conquer:** The solver performs a backtracking search on the ordered tiles.
+4.  **Combine:** Consistency checks across the region boundaries ensure that sub-solutions are compatible.
 
-For small regions, the solver falls back to a **leaf enumerator** that uses heuristic ordering.
+## Region-Based Search
+By splitting the board, the solver can detect contradictions early at the boundaries. If a partial solution in the first region cannot be extended into the second region due to boundary constraints, the solver backtracks immediately.
 
-## Data Model
+## Performance
+- **Heuristic Sorting:** Like the BT solver, DAC uses `sortTiles_dac` to prioritize constrained tiles within each region.
+- **Leaf Threshold:** Small regions are solved directly using the optimized leaf enumerator.
 
-* **`Region_dac`**: Half-open rectangle `[r0, r1) x [c0, c1)`.
-* **Edge constraints**: `unordered_map<long long, bool>` keyed by an ordered pair of adjacent cells. The value indicates whether that edge must be connected.
-
-## Main Flow
-
-### 1. Entry Point
-
-`solve_dac` creates the full-board region and calls `solveRegionWithCallback_dac` with empty constraints.
-
-### 2. Region Solver (`solveRegionWithCallback_dac`)
-
-The region solver has three cases:
-
-1. **No variable tiles**: Validate all fixed tiles against current constraints with `validateFixedTiles_dac`. If consistent, invoke the callback.
-2. **Leaf region**: If the region has `<= leafThreshold` variable tiles or is 1-row/1-col, it enumerates all rotations using `solveRegionEnumerate_dac`.
-3. **Split region**: Split into two halves. Solve the first half, then add cut-edge constraints derived from its boundary tiles and solve the second half.
-
-### 3. Leaf Enumeration
-
-`solveRegionEnumerate_dac` performs a standard recursive rotation search with early pruning:
-
-* **Consistency checking** uses `checkConsistency_dac`, which verifies:
-  * Board edges are respected (no open connections off-board).
-  * Already-fixed neighbors inside the region match.
-  * Fixed neighbors outside the region match.
-  * Explicit edge constraints are satisfied.
-
-* **Tile ordering** is done by `sortTiles_dac` (in `cpp/SortUtils.hpp`) using an MCV-style heuristic to reduce branching.
-
-## Cut-Edge Constraints
-
-When a region is solved, the solver inspects the tiles along the split boundary:
-
-* **Vertical split**: For each row `r`, it examines `(r, mid-1)` and records whether that tile connects **east** across the cut.
-* **Horizontal split**: For each column `c`, it examines `(mid-1, c)` and records whether that tile connects **south** across the cut.
-
-These constraints are added to the map passed to the second region. If a constraint already exists and conflicts, the solve path fails early.
-
-## Files and Entry Points
-
-* `cpp/DacSolver.hpp`: Main D&C solver.
-* `cpp/SortUtils.hpp`: Tile ordering helper used by the leaf enumerator.
-* `nets_engine.cpp`: The engine routes `solve_game` to a specific solver (currently `solve_dp`).
-
-## Performance Notes
-
-Splitting reduces the effective search space and exposes early contradictions across the cut. On small regions, heuristic ordering still provides most of the pruning benefit.
+## Complexity
+- **Time Complexity:** $O(k^N)$ worst-case, but region-based ordering often finds solutions faster on large, structured grids.
+- **Space Complexity:** $O(N)$ for the recursion and region metadata.

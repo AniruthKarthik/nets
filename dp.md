@@ -1,50 +1,26 @@
-# DP Solver Implementation (Memoized Dynamic Programming)
+# DP Solver Implementation (Dynamic Programming)
 
-This document explains the solver in `cpp/DpSolver.hpp`. It is a **true DP** solver: it uses an explicit state definition and memoization to reuse subproblem results.
+This document describes the memoized row-major solver in `cpp/DpSolver.hpp`.
 
 ## Overview
 
-`solve_dp` uses row-major traversal (top-left to bottom-right) and a memoized recursion. At each tile it tries valid rotations and uses a compact state to avoid re-solving the same suffix of the board.
+`solve_dp` is a high-performance solver that uses dynamic programming (memoized recursion) over a frontier state. It is the default solver for the NETS engine.
 
-Key ideas:
-* Precompute a **4-bit port mask** for each tile rotation.
-* Maintain a **frontier state** that captures the required north/west connections for the current tile.
-* At each step, try the allowed rotations and enforce compatibility with those requirements.
-* Memoize the result for each state so equivalent subproblems are solved once.
+### Key Concepts:
+- **Row-Major Traversal:** Tiles are processed from top-left to bottom-right.
+- **Frontier State:** The state of the DP is defined by the current tile index and a bitmask of required connections from the row above ("upMask") and the tile to the left ("leftReq").
+- **Memoization:** Results for each state `(idx, upMask, leftReq)` are cached in a hash map to avoid redundant calculations.
 
-## Port Mask Computation
+## State Encoding
+The solver uses a 64-bit key to represent the state:
+- `idx`: 16 bits
+- `upMask`: 16 bits (supports board widths up to 16)
+- `leftReq`: 1 bit
+This compact representation ensures high hit rates in the memoization table.
 
-`portMaskForTile` returns a 4-bit mask (N/E/S/W). It has two modes:
+## Wrap-Around Support
+For wrapping boards, the solver iterates through all possible boundary configurations (initial North and West requirements) and solves for each. This ensures that the global solution respects the toroidal topology of the grid.
 
-* **Custom tiles**: Compute the mask directly from the tile’s custom connections.
-* **Standard tiles**: Use a lazily initialized lookup table `masks[7][4]` so rotation masks are constant-time.
-
-## State Definition
-
-The state is defined by:
-
-* `idx`: linear index of the current tile (row-major).
-* `upMask`: a width-bit mask where bit `c` is the expected **north** connection for the current tile in column `c`.
-* `leftReq`: a 1-bit expected **west** connection for the current tile.
-* `rowWrapExpected`: for wrap boards, the expected west connection for column 0 (enforced against the last column).
-
-This state uniquely identifies the remaining subproblem without copying the board.
-
-## Memoized Recurrence
-
-`solveFrom` does the following:
-
-1. Derive `r, c` from `idx` and read the expected north/west requirements.
-2. Iterate valid rotations for the current tile.
-3. Check if the rotation matches expected north/west, and respects edge rules.
-4. Update the frontier (`upMask` and `leftReq`) for the next tile.
-5. Memoize and reuse the result for identical states.
-
-## Files and Entry Points
-
-* `cpp/DpSolver.hpp`: DP-labeled solver implementation.
-* `nets_engine.cpp`: The engine currently routes `solve_game` to `solve_dp`.
-
-## Notes
-
-This solver is **not divide-and-conquer**. It is a row-major DP with memoization and a compact frontier state. If you want D&C, use `solve_dac` in `cpp/DacSolver.hpp`.
+## Complexity
+- **Time Complexity:** $O(N \cdot 2^W)$ where $W$ is the width of the board. This is significantly better than $O(4^N)$ for boards where the width is relatively small.
+- **Space Complexity:** $O(S)$ where $S$ is the number of visited states in the memoization table.

@@ -1,38 +1,24 @@
 # Backtracking Solver Implementation
 
-This document explains the backtracking solver in `cpp/BtSolver.hpp`.
+This document describes the optimized backtracking solver in `cpp/BtSolver.hpp`.
 
 ## Overview
 
-`solve_bt` performs a straightforward **depth-first search** over tile rotations. It assigns rotations in a fixed order and prunes when a rotation conflicts with already-fixed neighbors or the board boundary.
+`solve_bt` uses recursive depth-first search to find a valid tile configuration. It is enhanced with heuristic tile ordering and early pruning to improve performance.
 
-Key ideas:
-* Maintain a `fixedMap` of tiles that are already assigned (locked, empty, or chosen during search).
-* For each tile, try all legal rotations and verify local consistency.
+### Key Components:
+- **`BtSolver` Class:** Manages the search state and recursion.
+- **`SolverUtils.hpp`:** Provides unified port mask calculation and consistency checks.
+- **Tile Prioritization:** Tiles are pre-sorted using a heuristic (Minimum Remaining Values approach) to prioritize more constrained tiles (edges, high-degree tiles).
 
-## Consistency Check
+## Consistency Checking
+At each step, the solver checks if the current rotation of a tile is compatible with:
+1.  **Board Boundaries:** No ports can point off-board (unless wrapping).
+2.  **Fixed Neighbors:** Connections must match the ports of adjacent tiles that are already fixed (locked or previously assigned).
 
-`checkConsistency_bt` checks a single tile against its immediate neighbors:
+## Complexity
+- **Time Complexity:** $O(k^N)$ in the worst case, where $N$ is the number of tiles and $k$ is the max rotations (4). However, heuristic ordering and pruning significantly reduce the explored state space.
+- **Space Complexity:** $O(N)$ for the recursion stack and the fixed-tile map.
 
-* If the neighbor is off-board, the tile must not connect in that direction.
-* If the neighbor is fixed, the tile’s connection must match the neighbor’s opposite connection.
-
-This check is purely local and is called at each rotation choice.
-
-## Recursive Search
-
-`solveRecursive_bt` performs the backtracking:
-
-1. Select the next tile from `tilesToSolve`.
-2. Iterate possible rotations (1, 2, or 4 depending on tile type).
-3. If `checkConsistency_bt` passes, mark as fixed and recurse.
-4. Backtrack on failure.
-
-## Files and Entry Points
-
-* `cpp/BtSolver.hpp`: Backtracking solver implementation.
-* `nets_engine.cpp`: Not currently the default solver; can be wired in by switching `solve_game` to call `solve_bt`.
-
-## Notes
-
-This solver is intentionally simple and is useful as a baseline or correctness reference, but it lacks heuristic ordering or region splitting.
+## Usage
+The engine can be switched to use `solve_bt` by modifying the `solve_game` action in `nets_engine.cpp`.

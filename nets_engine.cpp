@@ -6,13 +6,14 @@
 #include "cpp/ConnectivityCheck.hpp"
 #include "cpp/CpuStrategy.hpp"
 #include "cpp/DpSolver.hpp"
+#include "cpp/BtSolver.hpp"
+#include "cpp/DacSolver.hpp"
 #include "cpp/GameLogic.hpp"
 #include "cpp/GraphBuilder.hpp"
 #include "cpp/JsonExporter.hpp"
 #include "cpp/JsonImporter.hpp"
 #include "cpp/JsonUtils.hpp"
 #include "cpp/Tile.hpp"
-#include "cpp/DacSolver.hpp"
 
 using namespace std;
 
@@ -84,10 +85,28 @@ int main(int argc, char *argv[]) {
                            {"looseEnds", looseEnds},
                            {"solved", solved}};
     } else if (action == "solve_game") {
-      bool success = solve_dp(state.board);
+      string solverType = request.contains("solver") ? request["solver"].get<string>() : "dp";
+      bool success = false;
+      string implementation = "";
+
+      if (solverType == "bt") {
+          implementation = "Backtracking (BT)";
+          cerr << "[Engine] Solving using: " << implementation << endl;
+          success = solve_bt(state.board);
+      } else if (solverType == "dac") {
+          implementation = "Divide and Conquer (DAC)";
+          cerr << "[Engine] Solving using: " << implementation << endl;
+          success = solve_dac(state.board);
+      } else {
+          implementation = "Dynamic Programming (DP)";
+          cerr << "[Engine] Solving using: " << implementation << endl;
+          success = solve_dp(state.board);
+      }
+
       response["solved"] = success;
+      response["implementation"] = implementation;
+      
       if (success) {
-        // Return the solved grid state
         json solvedGrid = json::array();
         for (int r = 0; r < height; r++) {
           json row = json::array();
@@ -105,8 +124,7 @@ int main(int argc, char *argv[]) {
     cout << response << endl;
 
   } catch (const std::exception &e) {
-    // Return empty object on error as per constraint, or log to stderr
-    // cerr << "Error: " << e.what() << endl;
+    cerr << "Error: " << e.what() << endl;
     cout << "{}" << endl;
     return 1;
   }
