@@ -29,11 +29,21 @@ The CPU evaluates all possible rotations for every unlocked tile ($O(N)$ moves).
 ## 3. Data Structures
 
 ### How is the network modeled?
-The game is modeled as a **Graph** where each tile is a node and each connection is an edge. We use an **Adjacency List** (`map<pair<int, int>, vector<pair<int, int>>>`) for space efficiency $O(V+E)$ and quick neighbor traversal.
+The game is modeled as a **Graph** where each tile is a node and each connection is an edge. We use an optimized **Adjacency List** using a flattened `std::vector<std::vector<pair<int, int>>>` where nodes are indexed by their position in the 1D grid. This allows for $O(1)$ node access and space efficiency of $O(V+E)$.
 
 ---
 
-## 4. Problem Solving Strategies
+## 4. Performance Optimizations
+
+### How was the C++ engine optimized for speed?
+1.  **1D Grid Flattening:** Switched from a 2D `vector<vector<Tile>>` to a 1D `vector<Tile>` to improve cache locality and reduce memory fragmentation.
+2.  **Bitwise Port Operations:** Replaced port-list comparisons with `uint8_t` bitmasks and bitwise logic (`&`, `|`, `<<`). This allows constraint checking to happen in constant time without memory allocations.
+3.  **Graph Flattening:** Replaced `std::map`-based adjacency lists with integer-indexed `std::vector`, removing the $O(\log V)$ overhead from map lookups.
+4.  **Visited State Maps:** Replaced `std::set` with `std::vector<bool>` for DFS and connectivity checks, ensuring $O(1)$ lookup and insertion.
+
+---
+
+## 5. Problem Solving Strategies
 
 ### How do we handle "wraps" in the solvers?
 For wrapping boards, the solvers (DP especially) must account for the connection between the last row/column and the first row/column. The DP solver brute-forces the initial boundary constraints and ensures they match at the end of the recursion.

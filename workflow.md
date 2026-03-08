@@ -16,7 +16,9 @@
 ## 2. INITIALIZATION FLOW
 
 *   **Grid Initialization:** The `initializeGame()` method in `NetsGame.java` instantiates `GameController` and calls `controller.initGame(rows, cols)`.
-*   **Grid Structure:** The grid is a 2D array of `Tile` objects (`Tile[][]`), managed within a `GameState` object.
+*   **Grid Structure:** The grid is managed within a `GameState` object.
+    *   **Java:** Represented as a 2D array of `Tile` objects (`Tile[][]`) for logical mapping.
+    *   **C++:** Represented as a flattened 1D `std::vector<Tile>` for performance and cache locality. Access uses the `board.at(row, col)` abstraction.
 *   **Process & Validation:**
     1.  `GameController.createNewGameState()` calls `generateGrid()`.
     2.  `generateGrid` uses **Randomized Prim's Algorithm** to create a perfect spanning tree (guaranteed solvable).
@@ -32,8 +34,9 @@
 **Typical Turn Execution:**
 1.  **Event:** `TileView` (mouse click) ➔ `GameController.handleHumanMove()`.
 2.  **Update State:** `handleHumanMove` modifies `Tile.rotation` in the 2D array.
-3.  **Calculate Stats:** `handleHumanMove` ➔ `invokeCppEngine("get_stats")` ➔ `nets_engine.exe`.
-4.  **Visual Feedback:** `handleHumanMove` ➔ `updatePoweredStatus()` (Java DFS) ➔ `TileView.updateTile()`.
+3.  **Animation:** `handleHumanMove` triggers `TileView.setRotationAnimated()`, performing a smooth clockwise turn.
+4.  **Calculate Stats:** `handleHumanMove` ➔ `invokeCppEngine("get_stats")` ➔ `nets_engine.exe`.
+5.  **Visual Feedback:** `handleHumanMove` ➔ `updatePoweredStatus()` (Java DFS) ➔ `TileView.updateTile()`.
 5.  **Check Win:** `handleHumanMove` ➔ `checkWinCondition()`.
 6.  **Next Turn:** If game continues ➔ `Meta.setTurn("CPU")` ➔ `performStandaloneCpuMove()`.
 
@@ -71,7 +74,7 @@
 *   **Evaluation:**
     *   **Sorting:** `CpuStrategy.hpp` sorts moves by tile priority (Junction > Corner > Straight).
     *   **Greedy Search:** Iterates through sorted moves, applies them tentatively, and checks the "Board Score" (Loose Ends + Components).
-*   **Application:** The best move (row, col, rotation) is returned to Java, which applies it to the `GameState` and updates the UI.
+*   **Application:** The best move (row, col, rotation) is returned to Java, which applies it to the `GameState` and triggers an animated rotation in the UI.
 
 ---
 
@@ -83,6 +86,10 @@
     *   **C++ (Engine):** Receives a JSON snapshot, builds a temporary `Board` and `Graph`, processes, and discards.
 *   **State Updates:** Mutable `Tile` objects are modified in place. The `GameState` container is persistent.
 *   **Consistency:** Java manages the "Truth". The C++ engine is a stateless function (Input State -> Output Move).
+*   **Visualizer Mode:**
+    *   **Try Steps:** Rotate **Clockwise (Right)** to indicate the search exploring a new branch.
+    *   **Undo Steps:** Rotate **Counter-Clockwise (Left)** to indicate backtracking from a failed path.
+    *   **Sync:** JavaFX `Timeline` ensures animations remain synchronized with the playback speed slider.
 
 ---
 

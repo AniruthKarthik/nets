@@ -13,9 +13,11 @@ This document describes the Board-Splitting (D&C) solver in `cpp/DacSolver.hpp`.
 4.  **Combine:** Consistency checks across the region boundaries ensure that sub-solutions are compatible.
 
 ## Region-Based Search
-By splitting the board, the solver can detect contradictions early at the boundaries. If a partial solution in the first region cannot be extended into the second region due to boundary constraints, the solver backtracks immediately.
+By splitting the board, the solver can detect contradictions early at the boundaries. If a partial solution in the first region cannot be extended into the second region due to boundary constraints, the solver backtracks immediately. Boundary checks are performed in $O(1)$ using bitwise port masks.
 
 ## Performance
+- **Optimized Access:** Utilizes the flattened 1D board structure for faster tile lookups and better cache performance.
+- **Bitwise Heuristics:** Uses `uint8_t` masks for all connection logic, significantly reducing computation time during the Conquer phase.
 - **Heuristic Sorting:** Like the BT solver, DAC uses `sortTiles_dac` to prioritize constrained tiles within each region.
 - **Leaf Threshold:** Small regions are solved directly using the optimized leaf enumerator.
 

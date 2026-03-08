@@ -44,11 +44,22 @@ This updated analysis evaluates the Time and Space Complexity of the NETS projec
 ### File: cpp/ConnectivityCheck.hpp (DFS)
 | Function | Time Complexity | Space Complexity | Notes |
 |---|---|---|---|
-| isSolved | $O(N \log N)$ | $O(N)$ | Verifies win condition (connectivity, acyclicity, loose ends) using DFS traversal. |
+| isSolved | $O(N)$ | $O(N)$ | Verifies win condition (connectivity, acyclicity, loose ends) using optimized DFS traversal with integer-indexed adjacency lists and O(1) visited checks. |
 
 ---
 
 ## 4. Key Performance Enhancements
+
+### Low-Level Bitwise Optimization
+Port matching and constraint evaluation have been moved from `vector`-based list comparisons to `uint8_t` bitmask operations. This allows the solvers to perform rotation compatibility checks in constant time ($O(1)$) with zero memory allocations in the core search loop.
+
+### 1D Grid Flattening
+The board representation was migrated from a 2D `vector<vector<Tile>>` to a flattened 1D `vector<Tile>`. This optimization:
+1.  **Improves Cache Locality:** Tiles are contiguous in memory, reducing CPU cache misses during traversal.
+2.  **Reduces Overhead:** Minimizes memory management overhead when copying the board for move evaluation.
+
+### Integer-Indexed Adjacency Lists
+The graph structure now uses a flattened `std::vector` for adjacency storage instead of a `std::map`. This removes the $O(\log V)$ lookup cost, enabling $O(1)$ access to neighbor lists.
 
 ### Unified Port Logic
 By centralizing port mask calculation in `SolverUtils.hpp`, all solvers now share a consistent, high-performance logic for rotation evaluation.

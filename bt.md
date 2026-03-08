@@ -8,6 +8,7 @@ This document describes the optimized backtracking solver in `cpp/BtSolver.hpp`.
 
 ### Key Components:
 - **`BtSolver` Class:** Manages the search state and recursion.
+- **Bitwise Port Logic:** Uses `uint8_t` bitmasks for O(1) consistency checks between neighbors, eliminating vector allocations during search.
 - **`SolverUtils.hpp`:** Provides unified port mask calculation and consistency checks.
 - **Tile Prioritization:** Tiles are pre-sorted using a heuristic (Minimum Remaining Values approach) to prioritize more constrained tiles (edges, high-degree tiles).
 

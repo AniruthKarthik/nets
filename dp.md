@@ -8,6 +8,8 @@ This document describes the memoized row-major solver in `cpp/DpSolver.hpp`.
 
 ### Key Concepts:
 - **Row-Major Traversal:** Tiles are processed from top-left to bottom-right.
+- **Bitwise Speed:** Tile configurations and requirements are checked using `uint8_t` masks, allowing for constant-time validation.
+- **1D Grid Access:** Uses a flattened 1D board structure for optimal cache locality during recursive traversal.
 - **Frontier State:** The state of the DP is defined by the current tile index and a bitmask of required connections from the row above ("upMask") and the tile to the left ("leftReq").
 - **Memoization:** Results for each state `(idx, upMask, leftReq)` are cached in a hash map to avoid redundant calculations.
 
