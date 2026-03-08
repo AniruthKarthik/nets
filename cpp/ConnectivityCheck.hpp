@@ -12,17 +12,13 @@ using namespace std;
 
 // Time Complexity: O(V + E) where V is nodes, E is edges. Since max degree is 4, O(V).
 // Space Complexity: O(V) for visited set and recursion stack.
-inline void dfs(const Graph &graph, pair<int, int> node, set<pair<int, int>> &visited)
+inline void dfs(const Graph &graph, pair<int, int> node, vector<bool> &visited)
 {
-	visited.insert(node);
+	visited[node.first * graph.width + node.second] = true;
 
-	auto it = graph.adjList.find(node);
-	if (it == graph.adjList.end())
-		return;
-
-	for (const auto &neighbor : it->second)
+	for (const auto &neighbor : graph.adjList[node.first * graph.width + node.second])
 	{
-		if (visited.find(neighbor) == visited.end())
+		if (!visited[neighbor.first * graph.width + neighbor.second])
 		{
 			dfs(graph, neighbor, visited);
 		}
@@ -36,26 +32,30 @@ inline bool isFullyConnected(const Graph &graph, pair<int, int> powerSource)
 	if (graph.nodeCount() == 0)
 		return false;
 
-	set<pair<int, int>> visited;
+	vector<bool> visited(graph.adjList.size(), false);
 	dfs(graph, powerSource, visited);
 
-	return visited.size() == graph.nodeCount();
+    int visitedCount = 0;
+    for (bool v : visited) if (v) visitedCount++;
+
+	return visitedCount == graph.nodeCount();
 }
 
 // Time Complexity: O(V)
 // Space Complexity: O(V)
 inline int countComponents(const Graph &graph)
 {
-	set<pair<int, int>> visited;
+	vector<bool> visited(graph.adjList.size(), false);
 	int components = 0;
 
-	for (auto const &entry : graph.adjList)
+	for (int i = 0; i < (int)graph.adjList.size(); ++i)
 	{
-		pair<int, int> node = entry.first;
-		if (visited.find(node) == visited.end())
+		if (!visited[i] && graph.nodesExist[i])
 		{
 			components++;
-			dfs(graph, node, visited);
+            int r = i / graph.width;
+            int c = i % graph.width;
+			dfs(graph, {r, c}, visited);
 		}
 	}
 	return components;
@@ -84,10 +84,12 @@ inline int countLooseEnds(const Board &board)
 			if (tile.type == EMPTY || tile.type == POWER)
 				continue;
 
-			vector<Direction> ports = getActivePorts(tile);
+			uint8_t mask = getActivePortsMask(tile);
 
-			for (Direction dir : ports)
+			for (int d = 0; d < 4; d++)
 			{
+                if (!(mask & (1 << d))) continue;
+                Direction dir = static_cast<Direction>(d);
 				pair<int, int> neighborPos = getNeighbor(
 				    row, col, dir, board.width, board.height, board.wraps);
 
@@ -100,18 +102,11 @@ inline int countLooseEnds(const Board &board)
 
 					if (neighbor.type != EMPTY)
 					{
-						vector<Direction> neighborPorts =
-						    getActivePorts(neighbor);
+						uint8_t neighborMask = getActivePortsMask(neighbor);
 						Direction oppositeDir = opposite(dir);
-
-						for (Direction nDir : neighborPorts)
-						{
-							if (nDir == oppositeDir)
-							{
-								hasMatchingPort = true;
-								break;
-							}
-						}
+                        if (neighborMask & (1 << oppositeDir)) {
+                            hasMatchingPort = true;
+                        }
 					}
 				}
 
@@ -129,17 +124,13 @@ inline int countLooseEnds(const Board &board)
 // Time Complexity: O(V)
 // Space Complexity: O(V) for recursion stack
 inline bool dfsCycleDetection(const Graph &graph, pair<int, int> node,
-                       pair<int, int> parent, set<pair<int, int>> &visited)
+                       pair<int, int> parent, vector<bool> &visited)
 {
-	visited.insert(node);
+	visited[node.first * graph.width + node.second] = true;
 
-	auto it = graph.adjList.find(node);
-	if (it == graph.adjList.end())
-		return false;
-
-	for (const auto &neighbor : it->second)
+	for (const auto &neighbor : graph.adjList[node.first * graph.width + node.second])
 	{
-		if (visited.find(neighbor) == visited.end())
+		if (!visited[neighbor.first * graph.width + neighbor.second])
 		{
 			if (dfsCycleDetection(graph, neighbor, node, visited))
 			{
@@ -159,7 +150,7 @@ inline bool dfsCycleDetection(const Graph &graph, pair<int, int> node,
 // Space Complexity: O(V)
 inline bool hasClosedLoop(const Graph &graph, pair<int, int> startNode)
 {
-	set<pair<int, int>> visited;
+	vector<bool> visited(graph.adjList.size(), false);
 	return dfsCycleDetection(graph, startNode, {-1, -1}, visited);
 }
 
@@ -167,14 +158,15 @@ inline bool hasClosedLoop(const Graph &graph, pair<int, int> startNode)
 // Space Complexity: O(V)
 inline bool hasClosedLoop(const Graph &graph)
 {
-	set<pair<int, int>> visited;
+	vector<bool> visited(graph.adjList.size(), false);
 
-	for (auto const &entry : graph.adjList)
+	for (int i = 0; i < (int)graph.adjList.size(); ++i)
 	{
-		pair<int, int> node = entry.first;
-		if (visited.find(node) == visited.end())
+		if (!visited[i] && graph.nodesExist[i])
 		{
-			if (dfsCycleDetection(graph, node, {-1, -1}, visited))
+            int r = i / graph.width;
+            int c = i % graph.width;
+			if (dfsCycleDetection(graph, {r, c}, {-1, -1}, visited))
 			{
 				return true;
 			}

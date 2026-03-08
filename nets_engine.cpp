@@ -47,10 +47,10 @@ int main(int argc, char *argv[]) {
         int rotation = tObj["rotation"];
         bool locked =
             tObj.contains("locked") ? tObj["locked"].get<bool>() : false;
-        state.board.grid[r][c] = Tile(type, rotation, locked);
+        state.board.at(r, c) = Tile(type, rotation, locked);
 
         if (tObj.contains("connections")) {
-          state.board.grid[r][c].customConnections =
+          state.board.at(r, c).customConnections =
               tObj["connections"].get<vector<bool>>();
         }
 
@@ -133,16 +133,16 @@ int main(int argc, char *argv[]) {
         if (algo == "greedy") {
             for (int r = 0; r < height; ++r) {
                 for (int c = 0; c < width; ++c) {
-                    if (state.board.grid[r][c].locked || state.board.grid[r][c].type == EMPTY) continue;
+                    if (state.board.at(r, c).locked || state.board.at(r, c).type == EMPTY) continue;
                     
-                    int originalRot = state.board.grid[r][c].rotation;
+                    int originalRot = state.board.at(r, c).rotation;
                     for (int rot : {0, 90, 180, 270}) {
-                        state.board.grid[r][c].rotation = rot;
+                        state.board.at(r, c).rotation = rot;
                         double score = (double)evaluateBoard_greedy(state.board);
                         steps.push_back({r, c, rot, "TRY", 0});
                         steps.push_back({r, c, rot, "SCORE", score});
                     }
-                    state.board.grid[r][c].rotation = originalRot;
+                    state.board.at(r, c).rotation = originalRot;
                     steps.push_back({r, c, originalRot, "UNDO", 0});
                 }
             }
@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
           json row = json::array();
           for (int c = 0; c < width; c++) {
             json tile;
-            tile["rotation"] = state.board.grid[r][c].rotation;
+            tile["rotation"] = state.board.at(r, c).rotation;
             row.push_back(tile);
           }
           solvedGrid.push_back(row);

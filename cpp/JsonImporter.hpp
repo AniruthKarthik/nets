@@ -40,10 +40,10 @@ inline GameState importGameState(const std::string& filename) {
             TileType type = stringToTileType(tObj["type"]);
             int rotation = tObj["rotation"];
             bool locked = tObj.contains("locked") ? tObj["locked"].get<bool>() : false;
-            state.board.grid[r][c] = Tile(type, rotation, locked);
+            state.board.at(r, c) = Tile(type, rotation, locked);
             
             if (tObj.contains("connections")) {
-                state.board.grid[r][c].customConnections = tObj["connections"].get<vector<bool>>();
+                state.board.at(r, c).customConnections = tObj["connections"].get<vector<bool>>();
             }
             
             if (type == POWER) {

@@ -26,7 +26,7 @@ public:
         vector<pair<int, int>> tilesToSolve;
         for (int r = 0; r < board.height; r++) {
             for (int c = 0; c < board.width; c++) {
-                if (board.grid[r][c].locked || board.grid[r][c].type == EMPTY) {
+                if (board.at(r, c).locked || board.at(r, c).type == EMPTY) {
                     fixedMap[r][c] = true;
                 } else {
                     tilesToSolve.push_back({r, c});
@@ -50,17 +50,17 @@ private:
         int r = tiles[idx].first;
         int c = tiles[idx].second;
         
-        vector<int> rotations = getRotationOptions(board.grid[r][c]);
-        int originalRot = board.grid[r][c].rotation;
+        vector<int> rotations = getRotationOptions(board.at(r, c));
+        int originalRot = board.at(r, c).rotation;
 
         for (int rot : rotations) {
-            board.grid[r][c].rotation = rot;
+            board.at(r, c).rotation = rot;
             
             if (record_steps) {
                 steps.push_back({r, c, rot, "TRY"});
             }
 
-            uint8_t mask = getPortMask(board.grid[r][c]);
+            uint8_t mask = getPortMask(board.at(r, c));
 
             if (isCompatible(mask, r, c, board, fixedMap)) {
                 fixedMap[r][c] = true;
@@ -73,7 +73,7 @@ private:
             steps.push_back({r, c, originalRot, "UNDO"});
         }
 
-        board.grid[r][c].rotation = originalRot;
+        board.at(r, c).rotation = originalRot;
         return false;
     }
 };

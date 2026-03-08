@@ -10,48 +10,49 @@ using namespace std;
 
 struct Graph
 {
-	map<pair<int, int>, vector<pair<int, int>>> adjList;
+	vector<vector<pair<int, int>>> adjList;
+    vector<bool> nodesExist;
+    int width;
+    int _nodeCount = 0;
 
-    // Time Complexity: O(log V) due to map insertion
-    // Space Complexity: O(1) amortized
+	Graph(int w, int h) : width(w) {
+        adjList.resize(w * h);
+        nodesExist.assign(w * h, false);
+    }
+
 	void addEdge(pair<int, int> a, pair<int, int> b)
 	{
-		adjList[a].push_back(b);
-		adjList[b].push_back(a);
+		adjList[a.first * width + a.second].push_back(b);
+		adjList[b.first * width + b.second].push_back(a);
 	}
 
-    // Time Complexity: O(1)
-    // Space Complexity: O(1)
-	int nodeCount() const { return adjList.size(); }
+	int nodeCount() const {
+        return _nodeCount;
+    }
 };
 
 // Implementation
 
-// Time Complexity: O(V log V) due to map operations inside loop
-// Space Complexity: O(V) to store the graph
 inline Graph buildGraph(const Board &board)
 {
-	Graph graph;
+	Graph graph(board.width, board.height);
 
 	for (int row = 0; row < board.height; row++)
 	{
 		for (int col = 0; col < board.width; col++)
 		{
 			const Tile &tile = board.at(row, col);
+			if (tile.type == EMPTY) continue;
+            
+            graph.nodesExist[row * board.width + col] = true;
+            graph._nodeCount++;
 
-			if (tile.type == EMPTY)
-				continue;
+			uint8_t mask = getActivePortsMask(tile);
 
-			pair<int, int> currentPos = {row, col};
-			if (graph.adjList.find(currentPos) == graph.adjList.end())
+			for (int d = 0; d < 4; d++)
 			{
-				graph.adjList[currentPos] = vector<pair<int, int>>();
-			}
-
-			vector<Direction> ports = getActivePorts(tile);
-
-			for (Direction dir : ports)
-			{
+                if (!(mask & (1 << d))) continue;
+                Direction dir = static_cast<Direction>(d);
 				pair<int, int> neighborPos = getNeighbor(
 				    row, col, dir, board.width, board.height, board.wraps);
 
@@ -64,35 +65,16 @@ inline Graph buildGraph(const Board &board)
 				if (neighbor.type == EMPTY)
 					continue;
 
-				vector<Direction> neighborPorts = getActivePorts(neighbor);
+				uint8_t neighborMask = getActivePortsMask(neighbor);
 				Direction oppositeDir = opposite(dir);
 
-				bool hasConnection = false;
-				for (Direction nDir : neighborPorts)
+				if (neighborMask & (1 << oppositeDir))
 				{
-					if (nDir == oppositeDir)
-					{
-						hasConnection = true;
-						break;
-					}
-				}
-
-				if (hasConnection)
-				{
-					bool alreadyConnected = false;
-					for (const auto &neighbor : graph.adjList[currentPos])
-					{
-						if (neighbor == neighborPos)
-						{
-							alreadyConnected = true;
-							break;
-						}
-					}
-
-					if (!alreadyConnected)
-					{
-						graph.addEdge(currentPos, neighborPos);
-					}
+					// Check if already added (only add in one direction of traversal or check)
+                    // To avoid double edges in the undirected graph, we only add if (row, col) < neighborPos
+                    if (make_pair(row, col) < neighborPos) {
+					    graph.addEdge({row, col}, neighborPos);
+                    }
 				}
 			}
 		}

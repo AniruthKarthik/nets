@@ -24,7 +24,7 @@ public:
         fixedMap.assign(board.height, vector<bool>(board.width, false));
         for (int r = 0; r < board.height; r++) {
             for (int c = 0; c < board.width; c++) {
-                if (board.grid[r][c].locked || board.grid[r][c].type == EMPTY) {
+                if (board.at(r, c).locked || board.at(r, c).type == EMPTY) {
                     fixedMap[r][c] = true;
                 }
             }
@@ -58,7 +58,7 @@ private:
     }
 
     bool isConsistent(int r, int c, const Region &reg, const Constraints &constraints) {
-        uint8_t mask = getPortMask(board.grid[r][c]);
+        uint8_t mask = getPortMask(board.at(r, c));
         for (int d = 0; d < 4; d++) {
             Direction dir = static_cast<Direction>(d);
             pair<int, int> nPos = getNeighbor(r, c, dir, board.width, board.height, board.wraps);
@@ -91,18 +91,18 @@ private:
 
         int r = tiles[idx].first;
         int c = tiles[idx].second;
-        vector<int> rotations = getRotationOptions(board.grid[r][c]);
-        int orig = board.grid[r][c].rotation;
+        vector<int> rotations = getRotationOptions(board.at(r, c));
+        int orig = board.at(r, c).rotation;
 
         for (int rot : rotations) {
-            board.grid[r][c].rotation = rot;
+            board.at(r, c).rotation = rot;
             if (isConsistent(r, c, reg, constraints)) {
                 fixedMap[r][c] = true;
                 if (solveLeaf(idx + 1, tiles, reg, constraints)) return true;
                 fixedMap[r][c] = false;
             }
         }
-        board.grid[r][c].rotation = orig;
+        board.at(r, c).rotation = orig;
         return false;
     }
 

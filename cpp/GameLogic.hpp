@@ -8,7 +8,7 @@
 // Time Complexity: O(1)
 // Space Complexity: O(1)
 inline void applyMove(Board &board, const Move &move) {
-  Tile &tile = board.grid[move.x][move.y];
+  Tile &tile = board.at(move.x, move.y);
   tile.rotation = move.rotation;
 }
 

@@ -3,6 +3,7 @@
 
 #include <utility>
 #include <vector>
+#include <cstdint>
 
 using namespace std;
 
@@ -41,18 +42,18 @@ struct Board
 	int width;
 	int height;
 	bool wraps;
-	vector<vector<Tile>> grid;
+	vector<Tile> grid;
 	pair<int, int> powerTile;
 
 	Board(int w, int h, bool wrap = false)
 	    : width(w), height(h), wraps(wrap), powerTile({-1, -1})
 	{
-		grid.resize(h, vector<Tile>(w));
+		grid.resize(h * w);
 	}
 
-	Tile &at(int row, int col) { return grid[row][col]; }
+	Tile &at(int row, int col) { return grid[row * width + col]; }
 
-	const Tile &at(int row, int col) const { return grid[row][col]; }
+	const Tile &at(int row, int col) const { return grid[row * width + col]; }
 };
 
 struct Move {
@@ -63,58 +64,62 @@ struct Move {
 
 // Implementations
 
-inline vector<Direction> getActivePorts(const Tile &tile)
+inline uint8_t getActivePortsMask(const Tile &tile)
 {
     if (!tile.customConnections.empty()) {
-        vector<Direction> rotatedPorts;
-        int shift = tile.rotation / 90;
+        uint8_t mask = 0;
+        int shift = (tile.rotation / 90) % 4;
         for(int i=0; i<4; ++i) {
             if(tile.customConnections[i]) {
-                rotatedPorts.push_back(static_cast<Direction>((i + shift) % 4));
+                mask |= (1 << ((i + shift) % 4));
             }
         }
-        return rotatedPorts;
+        return mask;
     }
 
-	vector<Direction> basePorts;
+	uint8_t baseMask = 0;
 
 	switch (tile.type)
 	{
 	case EMPTY:
-		break;
+		return 0;
 
 	case POWER:
 	case CROSS:
-		basePorts = {NORTH, EAST, SOUTH, WEST};
-		break;
+		return 0xF;
 
 	case PC:
-		basePorts = {NORTH};
+		baseMask = 0x1; // NORTH
 		break;
 
 	case STRAIGHT:
-		basePorts = {NORTH, SOUTH};
+		baseMask = 0x5; // NORTH | SOUTH (1 | 4)
 		break;
 
 	case CORNER:
-		basePorts = {NORTH, EAST};
+		baseMask = 0x3; // NORTH | EAST (1 | 2)
 		break;
 
 	case T_JUNCTION:
-		basePorts = {NORTH, EAST, SOUTH};
+		baseMask = 0x7; // NORTH | EAST | SOUTH (1 | 2 | 4)
 		break;
 	}
 
-	vector<Direction> rotatedPorts;
-	int rotSteps = tile.rotation / 90;
+	int rotSteps = (tile.rotation / 90) % 4;
+    if (rotSteps == 0) return baseMask;
+    
+    return ((baseMask << rotSteps) | (baseMask >> (4 - rotSteps))) & 0xF;
+}
 
-	for (Direction dir : basePorts)
-	{
-		int newDir = (dir + rotSteps) % 4;
-		rotatedPorts.push_back(static_cast<Direction>(newDir));
-	}
-
-	return rotatedPorts;
+inline vector<Direction> getActivePorts(const Tile &tile)
+{
+    uint8_t mask = getActivePortsMask(tile);
+    vector<Direction> ports;
+    if (mask & 1) ports.push_back(NORTH);
+    if (mask & 2) ports.push_back(EAST);
+    if (mask & 4) ports.push_back(SOUTH);
+    if (mask & 8) ports.push_back(WEST);
+    return ports;
 }
 
 inline Direction opposite(Direction dir)

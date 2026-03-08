@@ -64,7 +64,7 @@ private:
         int r = idx / width;
         int c = idx % width;
 
-        const Tile &tile = board.grid[r][c];
+        const Tile &tile = board.at(r, c);
         uint8_t reqNorth = (upMask >> c) & 1;
         uint8_t reqWest = leftReq;
 
@@ -130,10 +130,10 @@ private:
         
         int r = idx / width;
         int c = idx % width;
-        vector<int> rotations = getRotationOptions(board.grid[r][c]);
-        board.grid[r][c].rotation = rotations[rotIdx];
+        vector<int> rotations = getRotationOptions(board.at(r, c));
+        board.at(r, c).rotation = rotations[rotIdx];
 
-        uint8_t mask = getPortMask(board.grid[r][c]);
+        uint8_t mask = getPortMask(board.at(r, c));
         uint8_t s = (mask >> SOUTH) & 1;
         uint8_t e = (mask >> EAST) & 1;
 
