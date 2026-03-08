@@ -3,11 +3,13 @@
 /home/ani/nets/netgame/src/main/java/com/nets/model/TileType.java
 /home/ani/nets/netgame/src/main/java/module-info.java
 /home/ani/nets/netgame/src/main/java/com/nets/model/Move.java
+/home/ani/nets/netgame/src/main/java/com/nets/model/VisualStep.java
 /home/ani/nets/netgame/src/main/java/com/nets/model/Rules.java
 /home/ani/nets/netgame/src/main/java/com/nets/controller/GameController.java
 /home/ani/nets/netgame/src/main/java/com/nets/view/GameBoard.java
 /home/ani/nets/netgame/src/main/java/com/nets/model/Meta.java
 /home/ani/nets/netgame/src/main/java/com/nets/model/Stats.java
+/home/ani/nets/netgame/src/main/java/com/nets/view/VisualizerView.java
 /home/ani/nets/netgame/src/main/java/com/nets/model/GameState.java
 /home/ani/nets/netgame/src/main/java/com/nets/Launcher.java
 /home/ani/nets/netgame/src/main/java/com/nets/view/TileView.java

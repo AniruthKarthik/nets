@@ -58,7 +58,7 @@ public class GameBoard extends VBox {
         heightProperty().addListener((obs, oldVal, newVal) -> updateResponsiveSizes());
     }
 
-    private void updateResponsiveSizes() {
+    public void updateResponsiveSizes() {
         double w = getWidth();
         double h = getHeight();
         if (w <= 0 || h <= 0) return;
@@ -90,13 +90,19 @@ public class GameBoard extends VBox {
         }
     }
 
-    private double calculateTileSize(int width, int height) {
+    public double calculateTileSize(int width, int height) {
         // Use container size for calculation instead of screen bounds
         double availableWidth = getWidth() * 0.7; // Reserve space for side panel
         double availableHeight = getHeight() * 0.7;
         
-        if (availableWidth <= 0) availableWidth = Screen.getPrimary().getVisualBounds().getWidth() * 0.5;
-        if (availableHeight <= 0) availableHeight = Screen.getPrimary().getVisualBounds().getHeight() * 0.5;
+        if (availableWidth <= 0) {
+             javafx.stage.Screen screen = javafx.stage.Screen.getPrimary();
+             availableWidth = screen.getVisualBounds().getWidth() * 0.5;
+        }
+        if (availableHeight <= 0) {
+             javafx.stage.Screen screen = javafx.stage.Screen.getPrimary();
+             availableHeight = screen.getVisualBounds().getHeight() * 0.5;
+        }
 
         double sizeW = availableWidth / width;
         double sizeH = availableHeight / height;

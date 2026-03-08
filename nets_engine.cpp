@@ -72,15 +72,21 @@ int main(int argc, char *argv[]) {
 
     if (action == "get_cpu_move") {
       string algo = request.contains("algo") ? request["algo"].get<string>() : "greedy";
-      cerr << "[Engine] CPU Move requested using algorithm: " << algo << endl;
+      bool visualize = request.contains("visualize") ? request["visualize"].get<bool>() : false;
+      cerr << "[Engine] CPU Move requested using algorithm: " << algo << (visualize ? " (with visualization)" : "") << endl;
       Move bestMove;
+      vector<VisualStep> steps;
 
       if (algo == "backtracking" || algo == "dp" || algo == "divideandconquer") {
           Board solvedBoard = state.board;
           bool success = false;
-          if (algo == "backtracking") success = solve_bt(solvedBoard);
-          else if (algo == "dp") success = solve_dp(solvedBoard);
-          else if (algo == "divideandconquer") success = solve_dac(solvedBoard);
+          if (algo == "backtracking") {
+              success = solve_bt(solvedBoard, visualize ? &steps : nullptr);
+          } else if (algo == "dp") {
+              success = solve_dp(solvedBoard);
+          } else if (algo == "divideandconquer") {
+              success = solve_dac(solvedBoard);
+          }
 
           if (success) {
               cerr << "[Engine] Solver found solution. Calculating next step..." << endl;
@@ -113,6 +119,45 @@ int main(int argc, char *argv[]) {
       response["move"] = {{"row", bestMove.x},
                           {"col", bestMove.y},
                           {"rotation", bestMove.rotation}};
+      if (visualize) {
+          json steps_json = json::array();
+          for (const auto& s : steps) {
+              steps_json.push_back(s.to_json());
+          }
+          response["steps"] = steps_json;
+      }
+    } else if (action == "get_visualization_steps") {
+        string algo = request.contains("algo") ? request["algo"].get<string>() : "greedy";
+        vector<VisualStep> steps;
+        
+        if (algo == "greedy") {
+            for (int r = 0; r < height; ++r) {
+                for (int c = 0; c < width; ++c) {
+                    if (state.board.grid[r][c].locked || state.board.grid[r][c].type == EMPTY) continue;
+                    
+                    int originalRot = state.board.grid[r][c].rotation;
+                    for (int rot : {0, 90, 180, 270}) {
+                        state.board.grid[r][c].rotation = rot;
+                        double score = (double)evaluateBoard_greedy(state.board);
+                        steps.push_back({r, c, rot, "TRY", 0});
+                        steps.push_back({r, c, rot, "SCORE", score});
+                    }
+                    state.board.grid[r][c].rotation = originalRot;
+                    steps.push_back({r, c, originalRot, "UNDO", 0});
+                }
+            }
+        } else if (algo == "backtracking" || algo == "dp" || algo == "divideandconquer") {
+            // For now, DP and DAC also use BT visualization to show a "searching" process
+            Board solvedBoard = state.board;
+            solve_bt(solvedBoard, &steps);
+        }
+        
+        json steps_json = json::array();
+        for (const auto& s : steps) {
+            steps_json.push_back(s.to_json());
+        }
+        response["steps"] = steps_json;
+
     } else if (action == "get_stats") {
       Graph graph = buildGraph(state.board);
       int components = countComponents(graph);

@@ -5,6 +5,7 @@ public class Move {
     private int row;
     private int col;
     private int rotation;
+    private java.util.List<VisualStep> steps;
 
     public Move() {}
 
@@ -13,6 +14,14 @@ public class Move {
         this.row = row;
         this.col = col;
         this.rotation = rotation;
+    }
+
+    public java.util.List<VisualStep> getSteps() {
+        return steps;
+    }
+
+    public void setSteps(java.util.List<VisualStep> steps) {
+        this.steps = steps;
     }
 
     public String getActor() {

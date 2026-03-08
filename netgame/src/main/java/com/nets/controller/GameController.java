@@ -17,13 +17,100 @@ public class GameController {
     private GameState gameState;
     private Tile[][] solvedGrid; // To store the solved state
     private String aiAlgorithm = "greedy";
+    private String lastUsedAiAlgorithm = null; // null until AI actually moves
+    private Move lastAiMove;
+    private int[][] preAiMoveRotations;
 
     public GameController(GameBoard gameBoard) {
         this.gameBoard = gameBoard;
     }
 
+    public Move getLastAiMove() {
+        return lastAiMove;
+    }
+
+    public String getLastUsedAiAlgorithm() {
+        return lastUsedAiAlgorithm;
+    }
+
+    public int[][] getPreAiMoveRotations() {
+        return preAiMoveRotations;
+    }
+
+    public String formatAlgoName(String algo) {
+        if (algo == null) return "None";
+        switch (algo) {
+            case "greedy": return "Greedy";
+            case "backtracking": return "Backtracking";
+            case "dp": return "Dynamic Programming";
+            case "divideandconquer": return "Divide and Conquer";
+            default: return algo;
+        }
+    }
+
     public void setAiAlgorithm(String algo) {
         this.aiAlgorithm = algo;
+    }
+
+    public String getAiAlgorithm() {
+        return aiAlgorithm;
+    }
+
+    public List<VisualStep> getVisualizationSteps() {
+        if (lastUsedAiAlgorithm == null || preAiMoveRotations == null) return Collections.emptyList();
+        
+        try {
+            Gson gson = new GsonBuilder().create();
+            
+            // Create a temporary GameState using the pre-move rotations
+            GameState preState = new GameState();
+            preState.setMeta(gameState.getMeta());
+            preState.setRules(gameState.getRules());
+            
+            int rows = gameState.getMeta().getHeight();
+            int cols = gameState.getMeta().getWidth();
+            Tile[][] preGrid = new Tile[rows][cols];
+            for (int r = 0; r < rows; r++) {
+                for (int c = 0; c < cols; c++) {
+                    Tile current = gameState.getGrid()[r][c];
+                    Tile copy = new Tile(current.getType(), preAiMoveRotations[r][c], current.isLocked());
+                    copy.setConnections(current.getConnections());
+                    preGrid[r][c] = copy;
+                }
+            }
+            preState.setGrid(preGrid);
+
+            com.google.gson.JsonObject request = new com.google.gson.JsonObject();
+            request.addProperty("action", "get_visualization_steps");
+            request.addProperty("algo", lastUsedAiAlgorithm);
+            request.add("gameState", gson.toJsonTree(preState));
+
+            // Call C++ engine directly to ensure we control the 'algo' property
+            File engineExe = new File("..", "nets_engine.exe");
+            if (!engineExe.exists()) engineExe = new File("nets_engine.exe");
+            ProcessBuilder pb = new ProcessBuilder(engineExe.getCanonicalPath());
+            Process process = pb.start();
+
+            try (OutputStreamWriter writer = new OutputStreamWriter(process.getOutputStream())) {
+                gson.toJson(request, writer);
+            }
+
+            StringBuilder output = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) output.append(line);
+            }
+            process.waitFor();
+
+            com.google.gson.JsonObject response = gson.fromJson(output.toString(), com.google.gson.JsonObject.class);
+            if (response != null && response.has("steps")) {
+                java.lang.reflect.Type listType = new com.google.gson.reflect.TypeToken<List<VisualStep>>(){}.getType();
+                return gson.fromJson(response.get("steps"), listType);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return Collections.emptyList();
     }
 
     // Time Complexity: O(N^2) dominated by createNewGameState (Prim's)
@@ -341,13 +428,14 @@ public class GameController {
 
     // Time Complexity: O(N) for serialization/deserialization. Logic inside is N^2 approx.
     // Space Complexity: O(N) for JSON data
-    private com.google.gson.JsonObject invokeCppEngine(String action) throws IOException, InterruptedException {
+    private com.google.gson.JsonObject invokeCppEngine(String action, boolean visualize) throws IOException, InterruptedException {
         Gson gson = new GsonBuilder().create();
 
         // Create the request object
         com.google.gson.JsonObject request = new com.google.gson.JsonObject();
         request.addProperty("action", action);
         request.addProperty("algo", aiAlgorithm);
+        request.addProperty("visualize", visualize);
         request.add("gameState", gson.toJsonTree(gameState));
 
         // Locate C++ engine
@@ -395,7 +483,19 @@ public class GameController {
     // Space Complexity: O(N)
     private void performStandaloneCpuMove() {
         try {
-            com.google.gson.JsonObject response = invokeCppEngine("get_cpu_move");
+            lastUsedAiAlgorithm = aiAlgorithm; // Store what we are about to use
+            
+            // Capture pre-move state
+            int rows = gameState.getMeta().getHeight();
+            int cols = gameState.getMeta().getWidth();
+            preAiMoveRotations = new int[rows][cols];
+            for (int r = 0; r < rows; r++) {
+                for (int c = 0; c < cols; c++) {
+                    preAiMoveRotations[r][c] = gameState.getGrid()[r][c].getRotation();
+                }
+            }
+
+            com.google.gson.JsonObject response = invokeCppEngine("get_cpu_move", true);
 
             if (response != null && response.has("move")) {
                 com.google.gson.JsonObject moveObj = response.getAsJsonObject("move");
@@ -403,11 +503,19 @@ public class GameController {
                 int c = moveObj.get("col").getAsInt();
                 int rot = moveObj.get("rotation").getAsInt();
 
+                lastAiMove = new Move("CPU", r, c, rot);
+                if (response.has("steps")) {
+                    Gson gson = new Gson();
+                    java.lang.reflect.Type listType = new com.google.gson.reflect.TypeToken<List<VisualStep>>(){}.getType();
+                    List<VisualStep> steps = gson.fromJson(response.get("steps"), listType);
+                    lastAiMove.setSteps(steps);
+                }
+
                 // Apply move
                 Tile tile = gameState.getGrid()[r][c];
                 tile.setRotation(rot); // Absolute rotation
                 
-                gameState.setLastMove(new Move("CPU", r, c, rot));
+                gameState.setLastMove(lastAiMove);
 
                 // Recalculate stats
                 updateStats();
@@ -445,7 +553,7 @@ public class GameController {
     // Space Complexity: O(N)
     private void updateStats() {
         try {
-            com.google.gson.JsonObject response = invokeCppEngine("get_stats");
+            com.google.gson.JsonObject response = invokeCppEngine("get_stats", false);
             if (response != null && response.has("stats")) {
                 com.google.gson.JsonObject statsObj = response.getAsJsonObject("stats");
                 int components = statsObj.get("components").getAsInt();

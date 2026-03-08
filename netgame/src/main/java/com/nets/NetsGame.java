@@ -15,6 +15,8 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.Priority;
 import javafx.stage.Stage;
 
+import com.nets.model.VisualStep;
+import java.util.List;
 import java.util.Optional;
 
 public class NetsGame extends Application {
@@ -128,6 +130,9 @@ public class NetsGame extends Application {
         return dialog.showAndWait();
     }
 
+    private TabPane mainTabPane;
+    private Tab gameTab;
+
     private void initializeGame() {
         // Create game board
         gameBoard = new GameBoard();
@@ -136,12 +141,18 @@ public class NetsGame extends Application {
         controller = new GameController(gameBoard);
 
         // Layout
-        BorderPane root = new BorderPane();
-        root.setCenter(gameBoard);
-        root.setStyle("-fx-background-color: #1a1a2e;");
+        BorderPane gameRoot = new BorderPane();
+        gameRoot.setCenter(gameBoard);
+        gameRoot.setStyle("-fx-background-color: #1a1a2e;");
+
+        mainTabPane = new TabPane();
+        mainTabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.SELECTED_TAB);
+        gameTab = new Tab("Nets Game", gameRoot);
+        gameTab.setClosable(false);
+        mainTabPane.getTabs().add(gameTab);
 
         // Scene
-        Scene scene = new Scene(root, primaryStage.getWidth(), primaryStage.getHeight());
+        Scene scene = new Scene(mainTabPane, primaryStage.getWidth(), primaryStage.getHeight());
         primaryStage.setScene(scene);
         primaryStage.show();
 
@@ -151,7 +162,7 @@ public class NetsGame extends Application {
 
         // Create control buttons
         HBox controls = createControls(scene);
-        root.setBottom(controls);
+        gameRoot.setBottom(controls);
 
         // Initialize game with selected dimensions
         System.out.println("Starting new game: " + currentRows + "x" + currentCols);
@@ -200,12 +211,56 @@ public class NetsGame extends Application {
         descLabel.setAlignment(Pos.CENTER);
         descLabel.styleProperty().bind(scene.widthProperty().divide(140).asString("-fx-text-fill: #aaa; -fx-font-size: %fpx; -fx-font-style: italic;"));
 
-        algoBox.getChildren().addAll(algoLabel, algoChoice, descLabel);
+        Button visualizeBtn = new Button("Visualize last move");
+        visualizeBtn.styleProperty().bind(scene.widthProperty().divide(120).asString("-fx-background-color: #9b59b6; -fx-text-fill: white; -fx-font-size: %fpx; -fx-padding: 8 16; -fx-cursor: hand; -fx-background-radius: 8;"));
+        visualizeBtn.setOnAction(e -> openVisualizer());
+
+        algoBox.getChildren().addAll(algoLabel, algoChoice, descLabel, visualizeBtn);
         algoBox.spacingProperty().bind(scene.heightProperty().multiply(0.015));
         
         sidePanel.getChildren().addAll(titleLabel, algoBox);
         
         return sidePanel;
+    }
+
+    private void openVisualizer() {
+        if (controller == null || controller.getLastUsedAiAlgorithm() == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Visualizer Unavailable");
+            alert.setHeaderText("No AI Move Recorded Yet");
+            alert.setContentText("The AI must perform at least one move before you can visualize its logic.\n\nPlay a move yourself or wait for the AI to respond.");
+            alert.getDialogPane().setStyle("-fx-font-size: 18px;");
+            alert.show();
+            return;
+        }
+
+        List<VisualStep> steps = controller.getVisualizationSteps();
+        if (steps == null || steps.isEmpty()) {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setContentText("No evaluation steps were recorded for the last move.");
+            alert.show();
+            return;
+        }
+
+        com.nets.view.VisualizerView visView = new com.nets.view.VisualizerView(
+            gameBoard.getGameState(), 
+            steps,
+            controller.getPreAiMoveRotations(),
+            controller.getLastAiMove(),
+            controller.formatAlgoName(controller.getLastUsedAiAlgorithm()),
+            mainTabPane.getScene(),
+            () -> {
+                Tab current = mainTabPane.getSelectionModel().getSelectedItem();
+                if (current != gameTab) {
+                    mainTabPane.getTabs().remove(current);
+                    mainTabPane.getSelectionModel().select(gameTab);
+                }
+            }
+        );
+
+        Tab visTab = new Tab("AI Visualizer", visView);
+        mainTabPane.getTabs().add(visTab);
+        mainTabPane.getSelectionModel().select(visTab);
     }
 
     private void showWelcomeMessage() {
