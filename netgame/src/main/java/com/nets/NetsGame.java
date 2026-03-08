@@ -135,17 +135,9 @@ public class NetsGame extends Application {
         // Create controller
         controller = new GameController(gameBoard);
 
-        // Create side panel
-        VBox sidePanel = createSidePanel();
-        gameBoard.setSidePanel(sidePanel);
-
-        // Create control buttons
-        HBox controls = createControls();
-
         // Layout
         BorderPane root = new BorderPane();
         root.setCenter(gameBoard);
-        root.setBottom(controls);
         root.setStyle("-fx-background-color: #1a1a2e;");
 
         // Scene
@@ -153,35 +145,49 @@ public class NetsGame extends Application {
         primaryStage.setScene(scene);
         primaryStage.show();
 
+        // Create side panel after scene is shown so we can use its properties
+        VBox sidePanel = createSidePanel(scene);
+        gameBoard.setSidePanel(sidePanel);
+
+        // Create control buttons
+        HBox controls = createControls(scene);
+        root.setBottom(controls);
+
         // Initialize game with selected dimensions
         System.out.println("Starting new game: " + currentRows + "x" + currentCols);
         controller.initGame(currentRows, currentCols);
     }
 
-    private VBox createSidePanel() {
-        VBox sidePanel = new VBox(35);
-        sidePanel.setPadding(new Insets(30));
+    private VBox createSidePanel(Scene scene) {
+        VBox sidePanel = new VBox();
         sidePanel.setAlignment(Pos.CENTER);
-        sidePanel.setPrefWidth(500); // Widen for much larger text
         sidePanel.setStyle("-fx-background-color: transparent;");
 
+        // Bind panel width to scene width (approx 22%)
+        sidePanel.prefWidthProperty().bind(scene.widthProperty().multiply(0.22));
+        sidePanel.spacingProperty().bind(scene.heightProperty().multiply(0.03));
+
         Label titleLabel = new Label("AI SETTINGS");
-        titleLabel.setStyle("-fx-text-fill: #00d4ff; -fx-font-size: 42px; -fx-font-weight: bold; -fx-letter-spacing: 2px;");
+        titleLabel.styleProperty().bind(scene.widthProperty().add(scene.heightProperty()).divide(140).asString("-fx-text-fill: #00d4ff; -fx-font-size: %fpx; -fx-font-weight: bold; -fx-letter-spacing: 1px;"));
 
         // Algo Dropdown Container
-        VBox algoBox = new VBox(25);
+        VBox algoBox = new VBox();
         algoBox.setAlignment(Pos.CENTER);
-        algoBox.setPadding(new Insets(35));
-        algoBox.setStyle("-fx-background-color: #16213e; -fx-background-radius: 20; -fx-border-color: #0f3460; -fx-border-radius: 20; -fx-border-width: 3;");
+        algoBox.paddingProperty().bind(javafx.beans.binding.Bindings.createObjectBinding(() -> {
+            double p = scene.getWidth() * 0.015;
+            return new Insets(p);
+        }, scene.widthProperty()));
+        
+        algoBox.styleProperty().bind(scene.widthProperty().divide(1200).asString("-fx-background-color: #16213e; -fx-background-radius: 15; -fx-border-color: #0f3460; -fx-border-radius: 15; -fx-border-width: %f;"));
 
         Label algoLabel = new Label("Algo for AI's next move:");
-        algoLabel.setStyle("-fx-text-fill: white; -fx-font-size: 28px; -fx-font-weight: bold;");
+        algoLabel.styleProperty().bind(scene.widthProperty().divide(100).asString("-fx-text-fill: white; -fx-font-size: %fpx; -fx-font-weight: bold;"));
         
         ChoiceBox<String> algoChoice = new ChoiceBox<>();
         algoChoice.getItems().addAll("Greedy", "Backtracking", "DP", "Divide and Conquer");
         algoChoice.setValue("Greedy");
-        algoChoice.setPrefWidth(400); 
-        algoChoice.setStyle("-fx-font-size: 24px; -fx-padding: 10; -fx-background-radius: 10; -fx-cursor: hand;");
+        algoChoice.prefWidthProperty().bind(sidePanel.prefWidthProperty().multiply(0.75));
+        algoChoice.styleProperty().bind(scene.widthProperty().divide(110).asString("-fx-font-size: %fpx; -fx-background-radius: 8; -fx-cursor: hand;"));
         
         algoChoice.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (controller != null) {
@@ -192,9 +198,10 @@ public class NetsGame extends Application {
         Label descLabel = new Label("The AI will use this algorithm to calculate its move after your turn.");
         descLabel.setWrapText(true);
         descLabel.setAlignment(Pos.CENTER);
-        descLabel.setStyle("-fx-text-fill: #ccc; -fx-font-size: 18px; -fx-font-style: italic;");
+        descLabel.styleProperty().bind(scene.widthProperty().divide(140).asString("-fx-text-fill: #aaa; -fx-font-size: %fpx; -fx-font-style: italic;"));
 
         algoBox.getChildren().addAll(algoLabel, algoChoice, descLabel);
+        algoBox.spacingProperty().bind(scene.heightProperty().multiply(0.015));
         
         sidePanel.getChildren().addAll(titleLabel, algoBox);
         
@@ -217,48 +224,42 @@ public class NetsGame extends Application {
         alert.showAndWait();
     }
 
-    private HBox createControls() {
-        HBox controls = new HBox(20);
-        controls.setPadding(new Insets(20));
+    private HBox createControls(Scene scene) {
+        HBox controls = new HBox();
+        controls.paddingProperty().bind(javafx.beans.binding.Bindings.createObjectBinding(() -> {
+             double p = scene.getHeight() * 0.015;
+             return new Insets(p);
+        }, scene.heightProperty()));
         controls.setAlignment(Pos.CENTER);
         controls.setStyle("-fx-background-color: #16213e;");
+        controls.spacingProperty().bind(scene.widthProperty().multiply(0.015));
+
+        String baseBtnStyle = "-fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-background-radius: 6;";
+        javafx.beans.binding.StringBinding dynamicBtnStyle = scene.widthProperty().divide(120).asString(baseBtnStyle + "-fx-font-size: %fpx; -fx-padding: 8 16;");
 
         Button newGameButton = new Button("New Game");
-        String baseBtnStyle = "-fx-text-fill: white; -fx-font-size: 18px; -fx-font-weight: bold; -fx-padding: 12 25; -fx-cursor: hand; -fx-background-radius: 8;";
-        
-        newGameButton.setStyle(baseBtnStyle + "-fx-background-color: #00d4ff;");
-        newGameButton.setOnMouseEntered(e -> newGameButton.setStyle(baseBtnStyle + "-fx-background-color: #00b8e6;"));
-        newGameButton.setOnMouseExited(e -> newGameButton.setStyle(baseBtnStyle + "-fx-background-color: #00d4ff;"));
+        newGameButton.styleProperty().bind(javafx.beans.binding.Bindings.concat(dynamicBtnStyle, "-fx-background-color: #00d4ff;"));
         newGameButton.setOnAction(e -> showNewGameDialog());
 
         Button resetButton = new Button("Reset Board");
-        resetButton.setStyle(baseBtnStyle + "-fx-background-color: #e94560;");
-        resetButton.setOnMouseEntered(e -> resetButton.setOpacity(0.8));
-        resetButton.setOnMouseExited(e -> resetButton.setOpacity(1.0));
+        resetButton.styleProperty().bind(javafx.beans.binding.Bindings.concat(dynamicBtnStyle, "-fx-background-color: #e94560;"));
         resetButton.setOnAction(e -> controller.resetGame(currentRows, currentCols));
 
         Button helpButton = new Button("Help");
-        String helpBtnStyle = "-fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 18px; -fx-padding: 12 25; -fx-cursor: hand; -fx-border-color: #0f3460; -fx-border-width: 2; -fx-border-radius: 8; -fx-background-radius: 8;";
-        helpButton.setStyle(helpBtnStyle);
-        helpButton.setOnMouseEntered(e -> helpButton.setStyle(helpBtnStyle + "-fx-background-color: #0f3460;"));
-        helpButton.setOnMouseExited(e -> helpButton.setStyle(helpBtnStyle));
+        helpButton.styleProperty().bind(javafx.beans.binding.Bindings.concat(dynamicBtnStyle, "-fx-background-color: #0f3460;"));
         helpButton.setOnAction(e -> showHelp());
 
         ToggleButton solutionButton = new ToggleButton("Show Solution");
-        String solutionButtonStyle = "-fx-background-color: #ffc107; -fx-text-fill: black; -fx-font-size: 18px; -fx-padding: 12 25; -fx-cursor: hand; -fx-background-radius: 8;";
-        String solutionButtonHoverStyle = "-fx-background-color: #ffca2c; -fx-text-fill: black; -fx-font-size: 18px; -fx-padding: 12 25; -fx-cursor: hand; -fx-background-radius: 8;";
-        solutionButton.setStyle(solutionButtonStyle);
+        solutionButton.styleProperty().bind(javafx.beans.binding.Bindings.concat(dynamicBtnStyle, "-fx-background-color: #ffc107; -fx-text-fill: black;"));
         solutionButton.setOnAction(e -> {
             boolean isSelected = solutionButton.isSelected();
             if (controller != null) {
                 controller.toggleSolution(isSelected);
             }
-            solutionButton.setStyle(isSelected ? solutionButtonHoverStyle : solutionButtonStyle);
         });
 
         Button rotateButton = new Button("Rotate Board");
-        String rotateButtonStyle = "-fx-background-color: #9b59b6; -fx-text-fill: white; -fx-font-size: 18px; -fx-padding: 12 25; -fx-cursor: hand; -fx-background-radius: 8;";
-        rotateButton.setStyle(rotateButtonStyle);
+        rotateButton.styleProperty().bind(javafx.beans.binding.Bindings.concat(dynamicBtnStyle, "-fx-background-color: #9b59b6;"));
         rotateButton.setOnAction(e -> {
             if (gameBoard != null) {
                 gameBoard.rotateBoardVisual();

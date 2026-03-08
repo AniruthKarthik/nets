@@ -31,7 +31,6 @@ public class GameBoard extends VBox {
 
         // Status label
         statusLabel = new Label();
-        statusLabel.setFont(Font.font("Arial", FontWeight.BOLD, 32)); // Larger font
         statusLabel.setTextFill(Color.WHITE);
 
         // Middle container for grid and potential side panel
@@ -50,10 +49,36 @@ public class GameBoard extends VBox {
 
         // Stats label
         statsLabel = new Label();
-        statsLabel.setFont(Font.font("Arial", FontWeight.NORMAL, 20)); // Larger font
         statsLabel.setTextFill(Color.rgb(200, 200, 200));
 
         getChildren().addAll(statusLabel, middleContainer, statsLabel);
+
+        // Responsive font sizes and tile resizing
+        widthProperty().addListener((obs, oldVal, newVal) -> updateResponsiveSizes());
+        heightProperty().addListener((obs, oldVal, newVal) -> updateResponsiveSizes());
+    }
+
+    private void updateResponsiveSizes() {
+        double w = getWidth();
+        double h = getHeight();
+        if (w <= 0 || h <= 0) return;
+
+        // Relative font sizes - toned down for neatness
+        double baseSize = Math.min(w, h);
+        statusLabel.setFont(Font.font("Arial", FontWeight.BOLD, baseSize * 0.035));
+        statsLabel.setFont(Font.font("Arial", FontWeight.NORMAL, baseSize * 0.02));
+
+        // Resize tiles
+        if (gameState != null && tileViews != null) {
+            double tileSize = calculateTileSize(gameState.getMeta().getWidth(), gameState.getMeta().getHeight());
+            for (int row = 0; row < tileViews.length; row++) {
+                for (int col = 0; col < tileViews[row].length; col++) {
+                    if (tileViews[row][col] != null) {
+                        tileViews[row][col].setSize(tileSize);
+                    }
+                }
+            }
+        }
     }
 
     public void setSidePanel(javafx.scene.Node node) {
@@ -66,16 +91,18 @@ public class GameBoard extends VBox {
     }
 
     private double calculateTileSize(int width, int height) {
-        Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
-        // Use more of the screen for the board
-        double availableWidth = screenBounds.getWidth() * 0.95;
-        double availableHeight = screenBounds.getHeight() * 0.82;
+        // Use container size for calculation instead of screen bounds
+        double availableWidth = getWidth() * 0.7; // Reserve space for side panel
+        double availableHeight = getHeight() * 0.7;
+        
+        if (availableWidth <= 0) availableWidth = Screen.getPrimary().getVisualBounds().getWidth() * 0.5;
+        if (availableHeight <= 0) availableHeight = Screen.getPrimary().getVisualBounds().getHeight() * 0.5;
 
         double sizeW = availableWidth / width;
         double sizeH = availableHeight / height;
 
         double size = Math.min(sizeW, sizeH);
-        return Math.max(30, Math.min(250, size)); // Increased max size to 250 for high-res
+        return Math.max(10, size); 
     }
 
     public void loadGameState(GameState state) {
@@ -98,6 +125,7 @@ public class GameBoard extends VBox {
         }
 
         updateUI();
+        updateResponsiveSizes();
     }
 
     public void updateUI() {
