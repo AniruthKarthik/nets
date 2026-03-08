@@ -21,6 +21,7 @@ public class GameBoard extends VBox {
     private Label statusLabel;
     private Label statsLabel;
     private GameState gameState;
+    private javafx.scene.layout.HBox middleContainer;
 
     public GameBoard() {
         setSpacing(20);
@@ -33,6 +34,10 @@ public class GameBoard extends VBox {
         statusLabel.setFont(Font.font("Arial", FontWeight.BOLD, 32)); // Larger font
         statusLabel.setTextFill(Color.WHITE);
 
+        // Middle container for grid and potential side panel
+        middleContainer = new javafx.scene.layout.HBox(80);
+        middleContainer.setAlignment(Pos.CENTER);
+
         // Grid pane
         gridPane = new GridPane();
         gridPane.setHgap(2);
@@ -40,13 +45,24 @@ public class GameBoard extends VBox {
         gridPane.setAlignment(Pos.CENTER);
         gridPane.setStyle("-fx-background-color: #16213e;");
         gridPane.setPadding(new Insets(10));
+        
+        middleContainer.getChildren().add(gridPane);
 
         // Stats label
         statsLabel = new Label();
         statsLabel.setFont(Font.font("Arial", FontWeight.NORMAL, 20)); // Larger font
         statsLabel.setTextFill(Color.rgb(200, 200, 200));
 
-        getChildren().addAll(statusLabel, gridPane, statsLabel);
+        getChildren().addAll(statusLabel, middleContainer, statsLabel);
+    }
+
+    public void setSidePanel(javafx.scene.Node node) {
+        if (middleContainer.getChildren().size() > 1) {
+            middleContainer.getChildren().remove(1);
+        }
+        if (node != null) {
+            middleContainer.getChildren().add(node);
+        }
     }
 
     private double calculateTileSize(int width, int height) {

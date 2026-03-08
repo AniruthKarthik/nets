@@ -71,7 +71,45 @@ int main(int argc, char *argv[]) {
     json response;
 
     if (action == "get_cpu_move") {
-      Move bestMove = chooseBestMove_greedy(state.board, lastMovedTile);
+      string algo = request.contains("algo") ? request["algo"].get<string>() : "greedy";
+      cerr << "[Engine] CPU Move requested using algorithm: " << algo << endl;
+      Move bestMove;
+
+      if (algo == "backtracking" || algo == "dp" || algo == "divideandconquer") {
+          Board solvedBoard = state.board;
+          bool success = false;
+          if (algo == "backtracking") success = solve_bt(solvedBoard);
+          else if (algo == "dp") success = solve_dp(solvedBoard);
+          else if (algo == "divideandconquer") success = solve_dac(solvedBoard);
+
+          if (success) {
+              cerr << "[Engine] Solver found solution. Calculating next step..." << endl;
+              // Find first tile that differs
+              bool found = false;
+              for (int r = 0; r < height && !found; ++r) {
+                  for (int c = 0; c < width && !found; ++c) {
+                      int currentRot = state.board.at(r, c).rotation;
+                      int targetRot = solvedBoard.at(r, c).rotation;
+                      if (currentRot != targetRot) {
+                          // Rotate 90 degrees clockwise towards target
+                          bestMove = {r, c, (currentRot + 90) % 360};
+                          found = true;
+                      }
+                  }
+              }
+              if (!found) {
+                  cerr << "[Engine] Board already matches solution. Falling back to greedy." << endl;
+                  bestMove = chooseBestMove_greedy(state.board, lastMovedTile);
+              }
+          } else {
+              cerr << "[Engine] Solver failed to find solution. Falling back to greedy." << endl;
+              bestMove = chooseBestMove_greedy(state.board, lastMovedTile);
+          }
+      } else {
+          cerr << "[Engine] Using standard greedy strategy." << endl;
+          bestMove = chooseBestMove_greedy(state.board, lastMovedTile);
+      }
+
       response["move"] = {{"row", bestMove.x},
                           {"col", bestMove.y},
                           {"rotation", bestMove.rotation}};

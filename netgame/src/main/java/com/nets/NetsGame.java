@@ -11,6 +11,8 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.Priority;
 import javafx.stage.Stage;
 
 import java.util.Optional;
@@ -133,6 +135,10 @@ public class NetsGame extends Application {
         // Create controller
         controller = new GameController(gameBoard);
 
+        // Create side panel
+        VBox sidePanel = createSidePanel();
+        gameBoard.setSidePanel(sidePanel);
+
         // Create control buttons
         HBox controls = createControls();
 
@@ -150,6 +156,49 @@ public class NetsGame extends Application {
         // Initialize game with selected dimensions
         System.out.println("Starting new game: " + currentRows + "x" + currentCols);
         controller.initGame(currentRows, currentCols);
+    }
+
+    private VBox createSidePanel() {
+        VBox sidePanel = new VBox(35);
+        sidePanel.setPadding(new Insets(30));
+        sidePanel.setAlignment(Pos.CENTER);
+        sidePanel.setPrefWidth(500); // Widen for much larger text
+        sidePanel.setStyle("-fx-background-color: transparent;");
+
+        Label titleLabel = new Label("AI SETTINGS");
+        titleLabel.setStyle("-fx-text-fill: #00d4ff; -fx-font-size: 42px; -fx-font-weight: bold; -fx-letter-spacing: 2px;");
+
+        // Algo Dropdown Container
+        VBox algoBox = new VBox(25);
+        algoBox.setAlignment(Pos.CENTER);
+        algoBox.setPadding(new Insets(35));
+        algoBox.setStyle("-fx-background-color: #16213e; -fx-background-radius: 20; -fx-border-color: #0f3460; -fx-border-radius: 20; -fx-border-width: 3;");
+
+        Label algoLabel = new Label("Algo for AI's next move:");
+        algoLabel.setStyle("-fx-text-fill: white; -fx-font-size: 28px; -fx-font-weight: bold;");
+        
+        ChoiceBox<String> algoChoice = new ChoiceBox<>();
+        algoChoice.getItems().addAll("Greedy", "Backtracking", "DP", "Divide and Conquer");
+        algoChoice.setValue("Greedy");
+        algoChoice.setPrefWidth(400); 
+        algoChoice.setStyle("-fx-font-size: 24px; -fx-padding: 10; -fx-background-radius: 10; -fx-cursor: hand;");
+        
+        algoChoice.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            if (controller != null) {
+                controller.setAiAlgorithm(newVal.toLowerCase().replace(" ", ""));
+            }
+        });
+
+        Label descLabel = new Label("The AI will use this algorithm to calculate its move after your turn.");
+        descLabel.setWrapText(true);
+        descLabel.setAlignment(Pos.CENTER);
+        descLabel.setStyle("-fx-text-fill: #ccc; -fx-font-size: 18px; -fx-font-style: italic;");
+
+        algoBox.getChildren().addAll(algoLabel, algoChoice, descLabel);
+        
+        sidePanel.getChildren().addAll(titleLabel, algoBox);
+        
+        return sidePanel;
     }
 
     private void showWelcomeMessage() {
@@ -219,6 +268,7 @@ public class NetsGame extends Application {
         controls.getChildren().addAll(newGameButton, resetButton, helpButton, solutionButton, rotateButton);
         return controls;
     }
+
 
     private void showNewGameDialog() {
         Optional<int[]> dimensions = showStartupDialog();

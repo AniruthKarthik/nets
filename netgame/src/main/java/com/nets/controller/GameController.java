@@ -16,9 +16,14 @@ public class GameController {
     private GameBoard gameBoard;
     private GameState gameState;
     private Tile[][] solvedGrid; // To store the solved state
+    private String aiAlgorithm = "greedy";
 
     public GameController(GameBoard gameBoard) {
         this.gameBoard = gameBoard;
+    }
+
+    public void setAiAlgorithm(String algo) {
+        this.aiAlgorithm = algo;
     }
 
     // Time Complexity: O(N^2) dominated by createNewGameState (Prim's)
@@ -342,6 +347,7 @@ public class GameController {
         // Create the request object
         com.google.gson.JsonObject request = new com.google.gson.JsonObject();
         request.addProperty("action", action);
+        request.addProperty("algo", aiAlgorithm);
         request.add("gameState", gson.toJsonTree(gameState));
 
         // Locate C++ engine
