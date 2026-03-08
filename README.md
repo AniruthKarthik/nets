@@ -10,10 +10,9 @@ This project demonstrates the practical application of **Design and Analysis of 
 ## Key Features
 *   **Hybrid Architecture:** Java for the interactive UI and C++ for heavy algorithmic processing.
 *   **Procedural Level Generation:** Uses **Randomized Prim's Algorithm** to generate unique, solvable puzzles every time.
-*   **Smart CPU Opponent:** An AI player that uses a **Greedy Strategy** with heuristics to solve the puzzle.
-*   **DP Solver (Default):** A memoized dynamic-programming solver with a compact frontier state and cached port masks.
-*   **D&C Solver (Optional):** A board-splitting solver that uses **Divide and Conquer** plus Merge Sort ordering in leaf regions.
-*   **Optional Solver Variants:** Alternate solvers `solve_bt` (direct recursion) and `solve_dac` (board splitting). The default is `solve_dp`.
+*   **High-Performance Engine:** Optimized C++ backend using bitwise operations, cache-friendly data structures (1D grid), and O(1) graph lookups.
+*   **Advanced AI Visualizer:** A specialized mode to watch the AI's search process in real-time with smooth, directional animations.
+*   **Multiple Solvers:** Includes **Backtracking (BT)**, **Dynamic Programming (DP)**, and **Divide & Conquer (D&C)** implementations.
 *   **Real-time Graph Analysis:** Instant feedback on connectivity, loops, and loose ends using **DFS**.
 *   **Dynamic Difficulty:** Supports board sizes from 3x3 up to 15x15.
 
@@ -21,9 +20,25 @@ This project demonstrates the practical application of **Design and Analysis of 
 
 ## Tech Stack
 *   **Frontend / UI:** Java 17+, JavaFX 21
-*   **Backend / Engine:** C++17 (optimized for speed)
+*   **Backend / Engine:** C++17 (Highly optimized for cache locality and bitwise speed)
 *   **Build Tools:** Maven (Java), Make/G++ (C++)
 *   **Communication:** JSON-based Inter-Process Communication (IPC) via StdIO
+
+---
+
+## Recent Improvements & Optimizations
+
+### 🚀 Engine Performance
+*   **1D Grid Flattening:** The board representation was moved from a 2D `vector<vector<Tile>>` to a 1D `vector<Tile>`. This significantly improves cache hits and reduces memory allocation overhead during recursive solving.
+*   **Bitwise Port Matching:** Replaced expensive `vector<Direction>` allocations with `uint8_t` bitmasks. Constraint checking now uses O(1) bitwise AND/SHIFT operations.
+*   **Graph Optimization:** Replaced `std::map` and `std::set` in the Graph structure with flattened `std::vector` and `vector<bool>`, reducing graph traversal overhead from O(log V) to O(1).
+
+### 🎨 UI & Visualization
+*   **Directional Animations:** The AI Visualizer now uses intelligent rotation logic:
+    *   **TRY** steps rotate **Clockwise (Right)** to show the search path.
+    *   **UNDO** steps rotate **Counter-Clockwise (Left)** to show backtracking.
+*   **Smooth Transitions:** Implemented JavaFX `Timeline` animations for all tile rotations, providing a polished and "alive" feel to the game.
+*   **Polished Sidebar:** Optimized the step-details panel to prevent text truncation and provide clearer algorithm labeling (e.g., "DP" for Dynamic Programming).
 
 ---
 
@@ -33,20 +48,20 @@ This project demonstrates the practical application of **Design and Analysis of 
 nets/
 ├── cpp/                   # C++ Engine Source Code
 │   ├── GameLogic.hpp      # Core game rules
-│   ├── GraphBuilder.hpp   # Adjacency List construction
-│   ├── CpuStrategy.hpp    # Greedy AI logic (QuickSort implemented here)
-│   ├── DacSolver.hpp       # Divide-and-conquer global solver (optional)
-│   ├── BtSolver.hpp        # BT solver (bt)
-│   ├── DpSolver.hpp        # DP solver (dp, default)
-│   ├── SortUtils.hpp      # Merge Sort (Divide & Conquer) for tiles
-│   └── ConnectivityCheck.hpp # DFS & Cycle Detection
+│   ├── GraphBuilder.hpp   # Adjacency List construction (Optimized)
+│   ├── CpuStrategy.hpp    # Greedy AI logic
+│   ├── DacSolver.hpp       # Divide-and-conquer global solver
+│   ├── BtSolver.hpp        # BT solver (Backtracking)
+│   ├── DpSolver.hpp        # DP solver (Dynamic Programming)
+│   ├── SortUtils.hpp      # Merge Sort (D&C) for tiles
+│   └── ConnectivityCheck.hpp # DFS & Cycle Detection (O(1) lookups)
 ├── netgame/               # Java Application Source Code
 │   ├── pom.xml            # Maven dependencies
 │   └── src/main/java/com/nets/
 │       ├── controller/    # Game Logic & IPC Controller
-│       ├── model/         # Data Models (GameState, Tile)
-│       └── view/          # JavaFX GUI Components
-├── nets_engine.cpp        # C++ Entry Point
+│       ├── model/         # Data Models (GameState, Tile, VisualStep)
+│       └── view/          # JavaFX GUI & Animation Components
+├── nets_engine.cpp        # C++ Entry Point (Optimized main loop)
 ├── Makefile               # C++ Build Script
 ├── README.md              # Project Documentation
 ├── qna.md                 # Detailed Algorithm Analysis
@@ -67,11 +82,10 @@ nets/
     *   **Cycles:** Closed loops, which are forbidden.
 
 ### 3. CPU & Solver Strategies (C++)
-*   **Greedy Approach (CPU):** Evaluates possible rotations and picks the one that minimizes the **Heuristic Cost**. It uses **Quick Sort** to prioritize moves.
-*   **DP Solver:** Explores the state space using memoized recursion and a compact frontier state. It uses cached port masks to speed constraint evaluation.
-*   **D&C Solver:** Splits the board into sub-regions and combines them via cut-edge constraints; leaf regions are ordered with Merge Sort (MCV).
-*   **Solver Variants (bt/dp):** `solve_bt` uses direct consistency checks, and `solve_dp` uses memoization with cached port masks. These are separate solvers and are not mixed.
-*   **Solver Variant (D&C):** `solve_dac` splits the board and combines sub-solutions via cut-edge constraints.
+*   **Greedy Approach (CPU):** Evaluates possible rotations and picks the one that minimizes the **Heuristic Cost**.
+*   **DP Solver:** Explores the state space using memoized recursion and a compact frontier state. Uses optimized bitmasks for ultra-fast constraint checking.
+*   **D&C Solver:** Splits the board into sub-regions and combines them via cut-edge constraints.
+*   **Visualizer Mode:** Records every "TRY" and "UNDO" operation from the engine and replays them in the UI with directional animations.
 
 ---
 
@@ -116,7 +130,7 @@ make clean
     *   **Left Click:** Rotate a tile 90° clockwise.
     *   **Locked Tiles:** The Power Source (Server) is locked and cannot be rotated.
 4.  **Win Condition:**
-    *   All PCs are powered (yellow wires).
+    *   All PCs are powered (green wires).
     *   No loose ends.
     *   No closed loops.
 
@@ -126,11 +140,3 @@ make clean
 For a deeper dive into the architecture and execution flow, refer to:
 *   **[WORKFLOW.md](workflow.md):** Step-by-step execution details from startup to termination.
 *   **[QnA.md](qna.md):** Academic defense, algorithmic analysis, and complexity details.
-
----
-
-## Future Scope
-*   **Advanced AI:** Implementing Minimax or Alpha-Beta pruning for multi-turn planning.
-*   **Multiplayer:** Enabling network play via Sockets.
-*   **Optimization:** Replacing IPC with JNI (Java Native Interface) for zero-latency calls.
-*   **Mobile Port:** Exporting the core logic to Android/iOS using Kotlin Multiplatform.
