@@ -11,88 +11,71 @@ import javafx.scene.control.Separator;
 import javafx.scene.control.Slider;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
+import javafx.scene.shape.Rectangle;
+import javafx.stage.Stage;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.util.Duration;
-import javafx.scene.shape.Rectangle;
 
 import java.util.List;
 
 public class VisualizerView extends VBox {
-    private GridPane gridPane;
     private TileView[][] tileViews;
-    private List<VisualStep> steps;
-    private int[][] preMoveRotations;
-    private Move actualMove;
     private GameState initialState;
-    
-    private Label statusLabel;
-    private Label statsLabel;
-    private Label stepInfoLabel;
-    private Label scoreLabel;
-    private Label algoLabel;
-    private Slider speedSlider;
-    
-    private boolean playing = false;
-    private Runnable onClose;
+    private List<VisualStep> steps;
+    private Move actualMove;
+    private int[][] preMoveRotations;
     private String currentAlgoDisplay;
-    private HBox middleContainer;
-    private Timeline highlightTimeline;
-    private Rectangle selectionFrame;
+    private Runnable onClose;
 
-    public VisualizerView(GameState state, List<VisualStep> steps, int[][] preMoveRotations, Move actualMove, String algoDisplayName, Scene scene, Runnable onClose) {
+    private GridPane gridPane;
+    private Label stepInfoLabel;
+    private Label algoLabel;
+    private Label scoreLabel;
+    private Slider speedSlider;
+    private boolean playing = false;
+    private Rectangle selectionFrame;
+    private Timeline highlightTimeline;
+
+    public VisualizerView(GameState state, List<VisualStep> steps, int[][] preMoveRotations, 
+                          Move actualMove, String algoName, Scene parentScene, Runnable onClose) {
         this.initialState = state;
         this.steps = steps;
-        this.preMoveRotations = preMoveRotations;
         this.actualMove = actualMove;
-        this.currentAlgoDisplay = algoDisplayName;
+        this.preMoveRotations = preMoveRotations;
+        this.currentAlgoDisplay = algoName;
         this.onClose = onClose;
 
-        setSpacing(20);
-        setPadding(new Insets(20));
         setAlignment(Pos.CENTER);
-        setStyle("-fx-background-color: #1a1a2e;");
-        
-        String css = getClass().getResource("/com/nets/styles.css").toExternalForm();
-        this.getStylesheets().add(css);
+        setSpacing(20);
+        setPadding(new Insets(30));
+        setStyle("-fx-background-color: #0f3460;");
 
-        statusLabel = new Label("AI VISUALIZER: " + algoDisplayName.toUpperCase());
-        statusLabel.styleProperty().bind(scene.widthProperty().divide(45).asString("-fx-text-fill: #ff9664; -fx-font-size: %fpx; -fx-font-weight: bold;"));
+        HBox mainLayout = new HBox(40);
+        mainLayout.setAlignment(Pos.CENTER);
 
-        middleContainer = new HBox();
-        middleContainer.setAlignment(Pos.CENTER);
-        middleContainer.spacingProperty().bind(scene.widthProperty().multiply(0.05));
+        gridPane = new GridPane();
+        gridPane.setAlignment(Pos.CENTER);
+        gridPane.setHgap(5);
+        gridPane.setVgap(5);
+        gridPane.setPadding(new Insets(15));
+        gridPane.setStyle("-fx-background-color: #1a1a2e; -fx-background-radius: 15; -fx-border-color: #00d4ff; -fx-border-width: 3;");
 
-        VBox gridBox = new VBox();
-        gridBox.setAlignment(Pos.CENTER);
         setupGrid();
-        gridBox.getChildren().add(gridPane);
-        
-        middleContainer.getChildren().addAll(gridBox, createSidePanel(scene));
 
-        statsLabel = new Label("Evaluation steps: " + (steps != null ? steps.size() : 0));
-        statsLabel.styleProperty().bind(scene.widthProperty().divide(65).asString("-fx-text-fill: #aaa; -fx-font-size: %fpx;"));
+        // Use the passed scene or wait for sceneProperty
+        VBox sidePanel = createSidePanel(parentScene != null ? parentScene : getScene());
+        HBox controls = createControls(parentScene != null ? parentScene : getScene());
+        mainLayout.getChildren().setAll(gridPane, sidePanel);
+        getChildren().setAll(mainLayout, controls);
+        updateTileSizes();
 
-        HBox controls = createControls(scene);
-
-        getChildren().addAll(statusLabel, middleContainer, statsLabel, controls);
-
-        Platform.runLater(this::updateTileSizes);
         widthProperty().addListener((obs, oldVal, newVal) -> updateTileSizes());
         heightProperty().addListener((obs, oldVal, newVal) -> updateTileSizes());
     }
 
     private void setupGrid() {
-        gridPane = new GridPane();
-        gridPane.setHgap(2);
-        gridPane.setVgap(2);
-        gridPane.setAlignment(Pos.CENTER);
-        gridPane.setStyle("-fx-background-color: #16213e;");
-        gridPane.setPadding(new Insets(10));
-
         int rows = initialState.getMeta().getHeight();
         int cols = initialState.getMeta().getWidth();
         tileViews = new TileView[rows][cols];
@@ -162,6 +145,7 @@ public class VisualizerView extends VBox {
 
         algoLabel = new Label("Algo: " + currentAlgoDisplay);
         algoLabel.styleProperty().bind(scene.widthProperty().divide(80).asString("-fx-text-fill: white; -fx-font-size: %fpx; -fx-font-weight: bold;"));
+        algoLabel.setMinWidth(Region.USE_PREF_SIZE);
 
         stepInfoLabel = new Label("Ready to replay...");
         stepInfoLabel.styleProperty().bind(scene.widthProperty().divide(90).asString("-fx-text-fill: #00d4ff; -fx-font-size: %fpx;"));
@@ -174,7 +158,7 @@ public class VisualizerView extends VBox {
         speedBox.setAlignment(Pos.CENTER);
         Label speedLabel = new Label("Visualizer Speed (0-500):");
         speedLabel.styleProperty().bind(scene.widthProperty().divide(100).asString("-fx-text-fill: white; -fx-font-size: %fpx;"));
-        speedSlider = new Slider(0, 500, 250);
+        speedSlider = new Slider(0, 500, 100);
         speedSlider.setPrefWidth(180);
         speedBox.getChildren().addAll(speedLabel, speedSlider);
 
@@ -217,6 +201,7 @@ public class VisualizerView extends VBox {
                 tileViews[r][c].getTile().setRotation(preMoveRotations[r][c]);
                 tileViews[r][c].setOpacity(1.0);
                 tileViews[r][c].setStyle("");
+                tileViews[r][c].setRotationAnimated(preMoveRotations[r][c], 0, true); // Reset visual rotation instantly
                 tileViews[r][c].draw();
             }
         }
@@ -227,6 +212,10 @@ public class VisualizerView extends VBox {
                 final int idx = i;
                 VisualStep step = steps.get(idx);
                 
+                double sliderVal = speedSlider.getValue();
+                long stepDelay = (long) (1500.0 * Math.pow(0.001, sliderVal / 500.0));
+                double animDuration = Math.min(stepDelay * 0.8, 300); // 80% of delay or max 300ms
+
                 Platform.runLater(() -> {
                     int r = step.getRow();
                     int c = step.getCol();
@@ -235,17 +224,16 @@ public class VisualizerView extends VBox {
                         scoreLabel.setText(String.format("Score: %.2f", step.getScore()));
                         tv.setStyle("-fx-border-color: #00d4ff; -fx-border-width: 4; -fx-background-color: rgba(0, 212, 255, 0.2);");
                     } else {
+                        boolean isClockwise = !"UNDO".equals(step.getType());
                         tv.getTile().setRotation(step.getRotation());
-                        tv.draw();
+                        tv.setRotationAnimated(step.getRotation(), animDuration, isClockwise);
                         tv.setStyle("-fx-border-color: #00d4ff; -fx-border-width: 2;");
                         stepInfoLabel.setText(String.format("Search: %s (%d, %d)", step.getType(), r, c));
                     }
                 });
 
                 try {
-                    double val = speedSlider.getValue();
-                    long delay = (long) (1500.0 * Math.pow(0.001, val / 500.0));
-                    Thread.sleep(Math.max(2, delay));
+                    Thread.sleep(Math.max(2, stepDelay));
                 } catch (InterruptedException e) { break; }
 
                 Platform.runLater(() -> {
@@ -260,12 +248,12 @@ public class VisualizerView extends VBox {
                     int c = actualMove.getCol();
                     TileView tv = tileViews[r][c];
                     tv.getTile().setRotation(actualMove.getRotation());
+                    tv.setRotationAnimated(actualMove.getRotation(), 300, true);
                     tv.draw();
                     
                     showFinalSelectionFrame(r, c);
                     
                     stepInfoLabel.setText("FINAL MOVE EXECUTED");
-                    statusLabel.setText("VISUALIZATION COMPLETE");
                     scoreLabel.setText("Move at (" + r + "," + c + ")");
                 });
             }

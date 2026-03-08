@@ -2,6 +2,7 @@ com/nets/Launcher.class
 com/nets/model/Stats.class
 com/nets/model/Tile.class
 com/nets/model/Move.class
+com/nets/view/TileView$2.class
 com/nets/controller/GameController.class
 com/nets/model/Meta.class
 com/nets/model/VisualStep.class

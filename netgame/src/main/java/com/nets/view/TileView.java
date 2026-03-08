@@ -2,14 +2,19 @@ package com.nets.view;
 
 import com.nets.model.Tile;
 import com.nets.model.TileType;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
-import javafx.scene.transform.Rotate;
+import javafx.util.Duration;
 
 public class TileView extends Canvas {
     private double size;
     private double lineWidth;
+    private double currentVisualRotation;
+    private Timeline rotationTimeline;
 
     // Wire colors
     private static final Color WIRE_POWERED_COLOR = Color.rgb(0, 255, 100); // Bright Green - for connected wires
@@ -33,6 +38,7 @@ public class TileView extends Canvas {
         this.tile = tile;
         this.row = row;
         this.col = col;
+        this.currentVisualRotation = tile.getRotation();
         draw();
     }
 
@@ -42,6 +48,71 @@ public class TileView extends Canvas {
         setWidth(size);
         setHeight(size);
         draw();
+    }
+
+    public void setRotationAnimated(int targetRotation, double durationMs, boolean clockwise) {
+        if (rotationTimeline != null) {
+            rotationTimeline.stop();
+        }
+
+        // Sync property value to current state before starting new animation
+        currentVisualRotationProperty().set(currentVisualRotation);
+
+        double startRot = currentVisualRotation;
+        
+        // Normalize target to be 0-359
+        double normalizedTarget = targetRotation % 360;
+        if (normalizedTarget < 0) normalizedTarget += 360;
+        final double finalTarget = normalizedTarget;
+        
+        // Normalize start to 0-359 for calculation
+        double startNormalized = startRot % 360;
+        if (startNormalized < 0) startNormalized += 360;
+
+        // Calculate difference based on direction
+        double diff = finalTarget - startNormalized;
+        if (clockwise) {
+            if (diff < 0) diff += 360;
+        } else {
+            if (diff > 0) diff -= 360;
+        }
+        
+        // If diff is 0, we're already there
+        if (diff == 0 && durationMs > 0) {
+            return;
+        }
+
+        double endRot = startRot + diff;
+
+        if (durationMs <= 0) {
+            currentVisualRotationProperty().set(finalTarget);
+            return;
+        }
+
+        rotationTimeline = new Timeline(
+            new KeyFrame(Duration.millis(durationMs),
+                new KeyValue(currentVisualRotationProperty(), endRot)
+            )
+        );
+        rotationTimeline.setOnFinished(e -> {
+            // Reset to normalized range for stability, but use property to keep in sync
+            currentVisualRotationProperty().set(finalTarget);
+        });
+        rotationTimeline.play();
+    }
+
+    private javafx.beans.property.DoubleProperty currentVisualRotationProperty;
+    private javafx.beans.property.DoubleProperty currentVisualRotationProperty() {
+        if (currentVisualRotationProperty == null) {
+            currentVisualRotationProperty = new javafx.beans.property.SimpleDoubleProperty(currentVisualRotation) {
+                @Override
+                protected void invalidated() {
+                    currentVisualRotation = get();
+                    draw();
+                }
+            };
+        }
+        return currentVisualRotationProperty;
     }
 
     public void draw() {
@@ -60,7 +131,7 @@ public class TileView extends Canvas {
         // Draw tile based on type and rotation
         gc.save();
         gc.translate(size / 2, size / 2);
-        gc.rotate(tile.getRotation());
+        gc.rotate(currentVisualRotation);
         gc.translate(-size / 2, -size / 2);
 
         // Choose color based on powered status and tile type
@@ -195,6 +266,7 @@ public class TileView extends Canvas {
 
     public void updateTile(Tile tile) {
         this.tile = tile;
+        this.currentVisualRotation = tile.getRotation();
         draw();
     }
 }

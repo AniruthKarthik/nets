@@ -42,7 +42,7 @@ public class GameController {
         switch (algo) {
             case "greedy": return "Greedy";
             case "backtracking": return "Backtracking";
-            case "dp": return "Dynamic Programming";
+            case "dp": return "DP";
             case "divideandconquer": return "Divide and Conquer";
             default: return algo;
         }
@@ -394,7 +394,11 @@ public class GameController {
             // Update UI
             for (int i = 0; i < gameState.getMeta().getHeight(); i++) {
                 for (int j = 0; j < gameState.getMeta().getWidth(); j++) {
-                    gameBoard.getTileView(i, j).updateTile(gameState.getGrid()[i][j]);
+                    if (i == row && j == col) {
+                        gameBoard.getTileView(i, j).setRotationAnimated(gameState.getGrid()[i][j].getRotation(), 150, true);
+                    } else {
+                        gameBoard.getTileView(i, j).updateTile(gameState.getGrid()[i][j]);
+                    }
                 }
             }
             gameBoard.updateUI();
@@ -526,9 +530,16 @@ public class GameController {
 
             // Update UI
             Platform.runLater(() -> {
+                int moveR = (lastAiMove != null) ? lastAiMove.getRow() : -1;
+                int moveC = (lastAiMove != null) ? lastAiMove.getCol() : -1;
+
                 for (int i = 0; i < gameState.getMeta().getHeight(); i++) {
                     for (int j = 0; j < gameState.getMeta().getWidth(); j++) {
-                        gameBoard.getTileView(i, j).updateTile(gameState.getGrid()[i][j]);
+                        if (i == moveR && j == moveC) {
+                            gameBoard.getTileView(i, j).setRotationAnimated(gameState.getGrid()[i][j].getRotation(), 300, true);
+                        } else {
+                            gameBoard.getTileView(i, j).updateTile(gameState.getGrid()[i][j]);
+                        }
                     }
                 }
                 updatePoweredStatus();
