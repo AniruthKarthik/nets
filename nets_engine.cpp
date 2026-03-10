@@ -1,6 +1,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <exception>
 
 // Include the combined header-only files
 #include "cpp/ConnectivityCheck.hpp"
@@ -23,30 +24,57 @@ int main(int argc, char *argv[]) {
     if (argc > 1) {
       string inputFile = argv[1];
       ifstream i(inputFile);
+      if (!i.is_open()) {
+          cerr << "Error: Could not open input file: " << inputFile << endl;
+          return 1;
+      }
       request = json::parse(i);
     } else {
       request = json::parse(cin);
     }
 
+    if (!request.contains("action")) {
+        cerr << "Error: Missing 'action' in request" << endl;
+        return 1;
+    }
     string action = request["action"];
+    
+    if (!request.contains("gameState")) {
+        cerr << "Error: Missing 'gameState' in request" << endl;
+        return 1;
+    }
     json inputJson = request["gameState"];
+
+    if (!inputJson.contains("meta") || !inputJson["meta"].contains("width") || !inputJson["meta"].contains("height")) {
+        cerr << "Error: Missing 'meta' or 'width'/'height' in gameState" << endl;
+        return 1;
+    }
 
     int width = inputJson["meta"]["width"];
     int height = inputJson["meta"]["height"];
-    bool wraps = inputJson["meta"]["wraps"];
+    bool wraps = inputJson["meta"].contains("wraps") ? inputJson["meta"]["wraps"].get<bool>() : false;
 
     GameState state(width, height, wraps);
-    state.status = stringToStatus(inputJson["meta"]["status"]);
-    state.turn = static_cast<int>(stringToActor(inputJson["meta"]["turn"]));
+    if (inputJson["meta"].contains("status")) {
+        state.status = stringToStatus(inputJson["meta"]["status"]);
+    }
+    if (inputJson["meta"].contains("turn")) {
+        state.turn = static_cast<int>(stringToActor(inputJson["meta"]["turn"]));
+    }
 
+    if (!inputJson.contains("grid")) {
+        cerr << "Error: Missing 'grid' in gameState" << endl;
+        return 1;
+    }
     auto gridJson = inputJson["grid"];
     for (int r = 0; r < height; ++r) {
       for (int c = 0; c < width; ++c) {
+        if (r >= gridJson.size() || c >= gridJson[r].size()) continue;
+        
         auto tObj = gridJson[r][c];
-        TileType type = stringToTileType(tObj["type"]);
-        int rotation = tObj["rotation"];
-        bool locked =
-            tObj.contains("locked") ? tObj["locked"].get<bool>() : false;
+        TileType type = tObj.contains("type") ? stringToTileType(tObj["type"]) : EMPTY;
+        int rotation = tObj.contains("rotation") ? tObj["rotation"].get<int>() : 0;
+        bool locked = tObj.contains("locked") ? tObj["locked"].get<bool>() : false;
         state.board.at(r, c) = Tile(type, rotation, locked);
 
         if (tObj.contains("connections")) {
@@ -60,12 +88,16 @@ int main(int argc, char *argv[]) {
     }
 
     pair<int, int> lastMovedTile = {-1, -1};
+    // Support both camelCase and snake_case for last move
+    json moveJson;
     if (inputJson.contains("lastMove") && !inputJson["lastMove"].is_null()) {
-      auto moveJson = inputJson["lastMove"];
-      if (moveJson.contains("row") && moveJson.contains("col")) {
-        lastMovedTile = {moveJson["row"].get<int>(),
-                         moveJson["col"].get<int>()};
-      }
+        moveJson = inputJson["lastMove"];
+    } else if (inputJson.contains("last_move") && !inputJson["last_move"].is_null()) {
+        moveJson = inputJson["last_move"];
+    }
+
+    if (!moveJson.is_null() && moveJson.contains("row") && moveJson.contains("col")) {
+        lastMovedTile = {moveJson["row"].get<int>(), moveJson["col"].get<int>()};
     }
 
     json response;
@@ -73,7 +105,6 @@ int main(int argc, char *argv[]) {
     if (action == "get_cpu_move") {
       string algo = request.contains("algo") ? request["algo"].get<string>() : "greedy";
       bool visualize = request.contains("visualize") ? request["visualize"].get<bool>() : false;
-      cerr << "[Engine] CPU Move requested using algorithm: " << algo << (visualize ? " (with visualization)" : "") << endl;
       Move bestMove = {0, 0, 0};
       vector<VisualStep> steps;
 
@@ -89,7 +120,6 @@ int main(int argc, char *argv[]) {
           }
 
           if (success) {
-              cerr << "[Engine] Solver found solution. Calculating next step..." << endl;
               // Find first tile that differs
               bool found = false;
               for (int r = 0; r < height && !found; ++r) {
@@ -104,15 +134,12 @@ int main(int argc, char *argv[]) {
                   }
               }
               if (!found) {
-                  cerr << "[Engine] Board already matches solution. Falling back to greedy." << endl;
                   bestMove = chooseBestMove_greedy(state.board, lastMovedTile);
               }
           } else {
-              cerr << "[Engine] Solver failed to find solution. Falling back to greedy." << endl;
               bestMove = chooseBestMove_greedy(state.board, lastMovedTile);
           }
       } else {
-          cerr << "[Engine] Using standard greedy strategy." << endl;
           bestMove = chooseBestMove_greedy(state.board, lastMovedTile);
       }
 
@@ -179,15 +206,12 @@ int main(int argc, char *argv[]) {
 
       if (solverType == "bt") {
           implementation = "Backtracking (BT)";
-          cerr << "[Engine] Solving using: " << implementation << endl;
           success = solve_bt(state.board);
       } else if (solverType == "dac") {
           implementation = "Divide and Conquer (DAC)";
-          cerr << "[Engine] Solving using: " << implementation << endl;
           success = solve_dac(state.board);
       } else {
           implementation = "Dynamic Programming (DP)";
-          cerr << "[Engine] Solving using: " << implementation << endl;
           success = solve_dp(state.board);
       }
 
@@ -212,7 +236,11 @@ int main(int argc, char *argv[]) {
     cout << response << endl;
 
   } catch (const std::exception &e) {
-    cerr << "Error: " << e.what() << endl;
+    cerr << "Engine Error: " << e.what() << endl;
+    cout << "{}" << endl;
+    return 1;
+  } catch (...) {
+    cerr << "Engine Error: Unknown exception" << endl;
     cout << "{}" << endl;
     return 1;
   }

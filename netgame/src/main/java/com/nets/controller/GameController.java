@@ -62,17 +62,20 @@ public class GameController {
         try {
             Gson gson = new GsonBuilder().create();
             
+            // Backup current gameState
+            GameState originalState = this.gameState;
+            
             // Create a temporary GameState using the pre-move rotations
             GameState preState = new GameState();
-            preState.setMeta(gameState.getMeta());
-            preState.setRules(gameState.getRules());
+            preState.setMeta(originalState.getMeta());
+            preState.setRules(originalState.getRules());
             
-            int rows = gameState.getMeta().getHeight();
-            int cols = gameState.getMeta().getWidth();
+            int rows = originalState.getMeta().getHeight();
+            int cols = originalState.getMeta().getWidth();
             Tile[][] preGrid = new Tile[rows][cols];
             for (int r = 0; r < rows; r++) {
                 for (int c = 0; c < cols; c++) {
-                    Tile current = gameState.getGrid()[r][c];
+                    Tile current = originalState.getGrid()[r][c];
                     Tile copy = new Tile(current.getType(), preAiMoveRotations[r][c], current.isLocked());
                     copy.setConnections(current.getConnections());
                     preGrid[r][c] = copy;
@@ -80,29 +83,11 @@ public class GameController {
             }
             preState.setGrid(preGrid);
 
-            com.google.gson.JsonObject request = new com.google.gson.JsonObject();
-            request.addProperty("action", "get_visualization_steps");
-            request.addProperty("algo", lastUsedAiAlgorithm);
-            request.add("gameState", gson.toJsonTree(preState));
+            // Temporarily swap gameState to use invokeCppEngine
+            this.gameState = preState;
+            com.google.gson.JsonObject response = invokeCppEngine("get_visualization_steps", true);
+            this.gameState = originalState; // Restore
 
-            // Call C++ engine directly to ensure we control the 'algo' property
-            File engineExe = new File("..", "nets_engine.exe");
-            if (!engineExe.exists()) engineExe = new File("nets_engine.exe");
-            ProcessBuilder pb = new ProcessBuilder(engineExe.getCanonicalPath());
-            Process process = pb.start();
-
-            try (OutputStreamWriter writer = new OutputStreamWriter(process.getOutputStream())) {
-                gson.toJson(request, writer);
-            }
-
-            StringBuilder output = new StringBuilder();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) output.append(line);
-            }
-            process.waitFor();
-
-            com.google.gson.JsonObject response = gson.fromJson(output.toString(), com.google.gson.JsonObject.class);
             if (response != null && response.has("steps")) {
                 java.lang.reflect.Type listType = new com.google.gson.reflect.TypeToken<List<VisualStep>>(){}.getType();
                 return gson.fromJson(response.get("steps"), listType);
@@ -443,44 +428,60 @@ public class GameController {
         request.add("gameState", gson.toJsonTree(gameState));
 
         // Locate C++ engine
-        File engineExe = new File("..", "nets_engine.exe");
+        String os = System.getProperty("os.name").toLowerCase();
+        String engineName = os.contains("win") ? "nets_engine.exe" : "nets_engine";
+        
+        File engineExe = new File("..", engineName);
         if (!engineExe.exists()) {
-            engineExe = new File("nets_engine.exe");
+            engineExe = new File(engineName);
         }
         
         if (!engineExe.exists()) {
-             throw new FileNotFoundException("Could not find nets_engine.exe at " + new File("..", "nets_engine.exe").getAbsolutePath() + " or " + new File("nets_engine.exe").getAbsolutePath());
+             throw new FileNotFoundException("Could not find " + engineName + " at " + new File("..", engineName).getAbsolutePath() + " or " + new File(engineName).getAbsolutePath());
         }
 
         // Call C++ engine
         ProcessBuilder pb = new ProcessBuilder(engineExe.getCanonicalPath());
         Process process = pb.start();
 
-        // Write request to stdin
-        try (OutputStreamWriter writer = new OutputStreamWriter(process.getOutputStream())) {
+        // Write request to stdin using UTF-8
+        try (OutputStreamWriter writer = new OutputStreamWriter(process.getOutputStream(), java.nio.charset.StandardCharsets.UTF_8)) {
             gson.toJson(request, writer);
+            writer.flush();
         }
 
-        // Read response from stdout
+        // Read response from stdout using UTF-8
         StringBuilder output = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 output.append(line);
             }
         }
 
-        int exitCode = process.waitFor();
-        if (exitCode != 0) {
-             // Try reading stderr if failed
-             try (BufferedReader errReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
-                String line;
-                while((line = errReader.readLine()) != null) System.err.println("CPP Error: " + line);
-             }
-             throw new RuntimeException("C++ engine exited with code " + exitCode);
+        // Read errors from stderr
+        StringBuilder errorOutput = new StringBuilder();
+        try (BufferedReader errReader = new BufferedReader(new InputStreamReader(process.getErrorStream(), java.nio.charset.StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = errReader.readLine()) != null) {
+                errorOutput.append(line).append("\n");
+                System.err.println("CPP Error: " + line);
+            }
         }
 
-        return gson.fromJson(output.toString(), com.google.gson.JsonObject.class);
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+             String errMsg = errorOutput.toString().trim();
+             if (errMsg.isEmpty()) errMsg = "C++ engine exited with code " + exitCode;
+             throw new RuntimeException(errMsg);
+        }
+
+        String jsonResponse = output.toString().trim();
+        if (jsonResponse.isEmpty()) {
+            throw new RuntimeException("C++ engine returned empty response");
+        }
+
+        return gson.fromJson(jsonResponse, com.google.gson.JsonObject.class);
     }
 
     // Time Complexity: O(N^2) due to engine call
@@ -811,8 +812,8 @@ public class GameController {
         alert.setContentText("Winner: " + winner + "!\n\n" +
                 "You've successfully connected all PCs to the power source!\n\n" +
                 "All tiles are connected in a single network.");
-        alert.getDialogPane().setPrefWidth(850);
-        alert.getDialogPane().setStyle("-fx-font-size: 24px;");
+        alert.getDialogPane().setPrefWidth(500);
+        alert.getDialogPane().setStyle("-fx-font-size: 14px;");
         alert.showAndWait();
     }
 
@@ -821,8 +822,8 @@ public class GameController {
         alert.setTitle("Error");
         alert.setHeaderText("An error occurred");
         alert.setContentText(message);
-        alert.getDialogPane().setPrefWidth(850);
-        alert.getDialogPane().setStyle("-fx-font-size: 24px;");
+        alert.getDialogPane().setPrefWidth(500);
+        alert.getDialogPane().setStyle("-fx-font-size: 14px;");
         alert.showAndWait();
     }
 

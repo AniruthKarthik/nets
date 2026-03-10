@@ -90,16 +90,16 @@ public class NetsGame extends Application {
 
         rowSpinner.setPrefWidth(220);
         colSpinner.setPrefWidth(220);
-        rowSpinner.setStyle("-fx-font-size: 24px;");
-        colSpinner.setStyle("-fx-font-size: 24px;");
+        rowSpinner.setStyle("-fx-font-size: 14px;");
+        colSpinner.setStyle("-fx-font-size: 14px;");
 
         Label infoLabel = new Label("Board size: 3x3 to 30x30");
-        infoLabel.setStyle("-fx-text-fill: #666; -fx-font-size: 18px;");
+        infoLabel.setStyle("-fx-text-fill: #666; -fx-font-size: 12px;");
 
         Label rowLabel = new Label("Rows:");
-        rowLabel.setStyle("-fx-font-size: 26px; -fx-font-weight: bold;");
+        rowLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
         Label colLabel = new Label("Columns:");
-        colLabel.setStyle("-fx-font-size: 26px; -fx-font-weight: bold;");
+        colLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
 
         grid.add(rowLabel, 0, 0);
         grid.add(rowSpinner, 1, 0);
@@ -113,11 +113,11 @@ public class NetsGame extends Application {
         dialog.getDialogPane().setStyle(
                 "-fx-background-color: #f5f5f5; " +
                         "-fx-font-family: 'Arial'; " +
-                        "-fx-font-size: 24px;"
+                        "-fx-font-size: 14px;"
         );
         
-        dialog.getDialogPane().setPrefWidth(900);
-        dialog.getDialogPane().setPrefHeight(500);
+        dialog.getDialogPane().setPrefWidth(500);
+        dialog.getDialogPane().setPrefHeight(350);
 
         // Convert result
         dialog.setResultConverter(dialogButton -> {
@@ -229,7 +229,7 @@ public class NetsGame extends Application {
             alert.setTitle("Visualizer Unavailable");
             alert.setHeaderText("No AI Move Recorded Yet");
             alert.setContentText("The AI must perform at least one move before you can visualize its logic.\n\nPlay a move yourself or wait for the AI to respond.");
-            alert.getDialogPane().setStyle("-fx-font-size: 18px;");
+            alert.getDialogPane().setStyle("-fx-font-size: 14px;");
             alert.show();
             return;
         }
@@ -238,6 +238,7 @@ public class NetsGame extends Application {
         if (steps == null || steps.isEmpty()) {
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setContentText("No evaluation steps were recorded for the last move.");
+            alert.getDialogPane().setStyle("-fx-font-size: 14px;");
             alert.show();
             return;
         }
@@ -274,8 +275,8 @@ public class NetsGame extends Application {
                         "Rotate the network wires to complete the connections.\n\n" +
                         "Good luck! 🍀"
         );
-        alert.getDialogPane().setPrefWidth(800);
-        alert.getDialogPane().setStyle("-fx-font-size: 24px;");
+        alert.getDialogPane().setPrefWidth(500);
+        alert.getDialogPane().setStyle("-fx-font-size: 14px;");
         alert.showAndWait();
     }
 
@@ -377,9 +378,9 @@ public class NetsGame extends Application {
                 tiles, new Separator(), win);
 
         alert.getDialogPane().setContent(content);
-        alert.getDialogPane().setPrefWidth(1000);
-        alert.getDialogPane().setPrefHeight(700);
-        alert.getDialogPane().setStyle("-fx-font-size: 24px;");
+        alert.getDialogPane().setPrefWidth(600);
+        alert.getDialogPane().setPrefHeight(500);
+        alert.getDialogPane().setStyle("-fx-font-size: 14px;");
         alert.showAndWait();
     }
 
