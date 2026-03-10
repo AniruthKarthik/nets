@@ -12,8 +12,11 @@ struct VisualStep {
     int row;
     int col;
     int rotation;
-    string type; // "TRY", "UNDO", "SUCCESS", "FAIL", "CONSIDER", "SCORE"
+    string type; // "TRY", "UNDO", "SUCCESS", "FAIL", "CONSIDER", "SCORE", "REGION"
     double score;
+    int upmask = 0;
+    int leftreq = 0;
+    int r0 = -1, r1 = -1, c0 = -1, c1 = -1; // Region bounds for DAC
 
     json to_json() const {
         return {
@@ -21,7 +24,10 @@ struct VisualStep {
             {"col", col},
             {"rotation", rotation},
             {"type", type},
-            {"score", score}
+            {"score", score},
+            {"upmask", upmask},
+            {"leftreq", leftreq},
+            {"r0", r0}, {"r1", r1}, {"c0", c0}, {"c1", c1}
         };
     }
 };

@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
       string algo = request.contains("algo") ? request["algo"].get<string>() : "greedy";
       bool visualize = request.contains("visualize") ? request["visualize"].get<bool>() : false;
       cerr << "[Engine] CPU Move requested using algorithm: " << algo << (visualize ? " (with visualization)" : "") << endl;
-      Move bestMove;
+      Move bestMove = {0, 0, 0};
       vector<VisualStep> steps;
 
       if (algo == "backtracking" || algo == "dp" || algo == "divideandconquer") {
@@ -83,9 +83,9 @@ int main(int argc, char *argv[]) {
           if (algo == "backtracking") {
               success = solve_bt(solvedBoard, visualize ? &steps : nullptr);
           } else if (algo == "dp") {
-              success = solve_dp(solvedBoard);
+              success = solve_dp(solvedBoard, visualize ? &steps : nullptr);
           } else if (algo == "divideandconquer") {
-              success = solve_dac(solvedBoard);
+              success = solve_dac(solvedBoard, visualize ? &steps : nullptr);
           }
 
           if (success) {
@@ -147,9 +147,14 @@ int main(int argc, char *argv[]) {
                 }
             }
         } else if (algo == "backtracking" || algo == "dp" || algo == "divideandconquer") {
-            // For now, DP and DAC also use BT visualization to show a "searching" process
             Board solvedBoard = state.board;
-            solve_bt(solvedBoard, &steps);
+            if (algo == "backtracking") {
+                solve_bt(solvedBoard, &steps);
+            } else if (algo == "dp") {
+                solve_dp(solvedBoard, &steps);
+            } else if (algo == "divideandconquer") {
+                solve_dac(solvedBoard, &steps);
+            }
         }
         
         json steps_json = json::array();

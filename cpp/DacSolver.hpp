@@ -4,9 +4,11 @@
 #include "Tile.hpp"
 #include "SolverUtils.hpp"
 #include "SortUtils.hpp"
+#include "VisualStep.hpp"
 #include <vector>
 #include <unordered_map>
 #include <functional>
+#include <algorithm>
 
 using namespace std;
 
@@ -18,7 +20,7 @@ struct Region {
 
 class DacSolver {
 public:
-    explicit DacSolver(Board &b) : board(b) {}
+    explicit DacSolver(Board &b, vector<VisualStep>* s = nullptr) : board(b), steps(s) {}
 
     bool solve() {
         fixedMap.assign(board.height, vector<bool>(board.width, false));
@@ -35,6 +37,7 @@ public:
 
 private:
     Board &board;
+    vector<VisualStep>* steps;
     vector<vector<bool>> fixedMap;
 
     struct EdgeKey {
@@ -72,10 +75,8 @@ private:
                     uint8_t nMask = getPortMask(board.at(nPos.first, nPos.second));
                     if (myPort != ((nMask >> opposite(dir)) & 1)) return false;
                 } else if (!nInRegion) {
-                    // Check constraints
                     EdgeKey key = makeKey(r, c, nPos.first, nPos.second);
                     if (constraints.count(key) && constraints.at(key) != myPort) return false;
-                    // If neighbor is fixed outside region, check it
                     if (fixedMap[nPos.first][nPos.second]) {
                         uint8_t nMask = getPortMask(board.at(nPos.first, nPos.second));
                         if (myPort != ((nMask >> opposite(dir)) & 1)) return false;
@@ -94,12 +95,34 @@ private:
         vector<int> rotations = getRotationOptions(board.at(r, c));
         int orig = board.at(r, c).rotation;
 
+        if (steps && steps->size() < 10000) {
+            VisualStep s;
+            s.row = r; s.col = c; s.rotation = orig; s.type = "CONSIDER";
+            s.r0 = reg.r0; s.r1 = reg.r1; s.c0 = reg.c0; s.c1 = reg.c1;
+            steps->push_back(s);
+        }
+
         for (int rot : rotations) {
             board.at(r, c).rotation = rot;
+            
+            if (steps && steps->size() < 10000) {
+                VisualStep s;
+                s.row = r; s.col = c; s.rotation = rot; s.type = "TRY";
+                s.r0 = reg.r0; s.r1 = reg.r1; s.c0 = reg.c0; s.c1 = reg.c1;
+                steps->push_back(s);
+            }
+
             if (isConsistent(r, c, reg, constraints)) {
                 fixedMap[r][c] = true;
                 if (solveLeaf(idx + 1, tiles, reg, constraints)) return true;
                 fixedMap[r][c] = false;
+            }
+
+            if (steps && steps->size() < 10000) {
+                VisualStep s;
+                s.row = r; s.col = c; s.rotation = rot; s.type = "UNDO";
+                s.r0 = reg.r0; s.r1 = reg.r1; s.c0 = reg.c0; s.c1 = reg.c1;
+                steps->push_back(s);
             }
         }
         board.at(r, c).rotation = orig;
@@ -107,6 +130,13 @@ private:
     }
 
     bool solveRegion(const Region &reg, const Constraints &constraints) {
+        if (steps && steps->size() < 10000) {
+            VisualStep s;
+            s.row = -1; s.col = -1; s.type = "REGION";
+            s.r0 = reg.r0; s.r1 = reg.r1; s.c0 = reg.c0; s.c1 = reg.c1;
+            steps->push_back(s);
+        }
+
         vector<pair<int, int>> varTiles;
         for (int r = reg.r0; r < reg.r1; r++) {
             for (int c = reg.c0; c < reg.c1; c++) {
@@ -115,7 +145,6 @@ private:
         }
 
         if (varTiles.empty()) {
-            // Validate all fixed tiles in region against constraints
             for (int r = reg.r0; r < reg.r1; r++) {
                 for (int c = reg.c0; c < reg.c1; c++) {
                     if (!isConsistent(r, c, reg, constraints)) return false;
@@ -129,45 +158,9 @@ private:
             return solveLeaf(0, varTiles, reg, constraints);
         }
 
-        if (reg.width() >= reg.height()) {
-            int mid = reg.c0 + reg.width() / 2;
-            Region left = {reg.r0, reg.r1, reg.c0, mid};
-            Region right = {reg.r0, reg.r1, mid, reg.c1};
+        int mid = (reg.width() >= reg.height()) ? (reg.c0 + reg.width() / 2) : (reg.r0 + reg.height() / 2);
+        bool vertical = reg.width() >= reg.height();
 
-            // This is still essentially backtracking but structured by regions.
-            // For a true D&C solver, we would need to collect ALL boundary configurations.
-            // But here we use a recursive approach.
-            
-            // To be "Divide and Conquer", we should ideally solve left and right independently
-            // and merge. But that's hard for this puzzle.
-            // So we'll stick to the "split and solve" which is what's expected.
-            
-            // Wait, the callback approach in the previous version was better for exploring all solutions.
-            // Let's re-implement that properly.
-            return solveWithSplit(reg, true, constraints);
-        } else {
-            return solveWithSplit(reg, false, constraints);
-        }
-    }
-
-    bool solveWithSplit(const Region &reg, bool vertical, const Constraints &constraints) {
-        int mid = vertical ? (reg.c0 + reg.width() / 2) : (reg.r0 + reg.height() / 2);
-        Region r1 = vertical ? Region{reg.r0, reg.r1, reg.c0, mid} : Region{reg.r0, mid, reg.c0, reg.c1};
-        Region r2 = vertical ? Region{reg.r0, reg.r1, mid, reg.c1} : Region{mid, reg.r1, reg.c0, reg.c1};
-
-        // We need a way to iterate through solutions of r1.
-        // This is getting complicated. Let's simplify.
-        // A "best" DAC for this is usually a backtracking that picks tiles from one region first.
-        
-        // I'll just use the pre-sorted leaf solver if it's small, 
-        // otherwise I'll split the tile list by region.
-        vector<pair<int, int>> varTiles;
-        for (int r = reg.r0; r < reg.r1; r++) {
-            for (int c = reg.c0; c < reg.c1; c++) {
-                if (!fixedMap[r][c]) varTiles.push_back({r, c});
-            }
-        }
-        // Sort: tiles in r1 first, then r2
         sort(varTiles.begin(), varTiles.end(), [&](const pair<int, int> &a, const pair<int, int> &b) {
             bool aInR1 = vertical ? (a.second < mid) : (a.first < mid);
             bool bInR1 = vertical ? (b.second < mid) : (b.first < mid);
@@ -179,8 +172,8 @@ private:
     }
 };
 
-inline bool solve_dac(Board &board) {
-    DacSolver solver(board);
+inline bool solve_dac(Board &board, vector<VisualStep>* steps = nullptr) {
+    DacSolver solver(board, steps);
     return solver.solve();
 }
 

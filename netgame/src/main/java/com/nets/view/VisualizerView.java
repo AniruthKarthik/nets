@@ -36,7 +36,12 @@ public class VisualizerView extends VBox {
     private Slider speedSlider;
     private boolean playing = false;
     private Rectangle selectionFrame;
+    private Rectangle regionHighlight;
     private Timeline highlightTimeline;
+
+    private Label upmaskLabel;
+    private Label leftreqLabel;
+    private Label extraLabel; // For DAC regions or other specific data
 
     public VisualizerView(GameState state, List<VisualStep> steps, int[][] preMoveRotations, 
                           Move actualMove, String algoName, Scene parentScene, Runnable onClose) {
@@ -103,6 +108,18 @@ public class VisualizerView extends VBox {
         selectionFrame.setMouseTransparent(true);
         selectionFrame.setManaged(false); // CRITICAL: This prevents the gap issue
         gridPane.getChildren().add(selectionFrame); 
+
+        regionHighlight = new Rectangle();
+        regionHighlight.setFill(Color.rgb(0, 212, 255, 0.1));
+        regionHighlight.setStroke(Color.rgb(0, 212, 255, 0.8));
+        regionHighlight.setStrokeWidth(3);
+        regionHighlight.getStrokeDashArray().addAll(10d, 5d);
+        regionHighlight.setArcWidth(15);
+        regionHighlight.setArcHeight(15);
+        regionHighlight.setVisible(false);
+        regionHighlight.setMouseTransparent(true);
+        regionHighlight.setManaged(false);
+        gridPane.getChildren().add(regionHighlight);
     }
 
     private void updateTileSizes() {
@@ -154,6 +171,21 @@ public class VisualizerView extends VBox {
         scoreLabel = new Label("Score: ---");
         scoreLabel.styleProperty().bind(scene.widthProperty().divide(70).asString("-fx-text-fill: #ffc107; -fx-font-size: %fpx; -fx-font-weight: bold;"));
 
+        upmaskLabel = new Label("UpMask: ---");
+        upmaskLabel.styleProperty().bind(scene.widthProperty().divide(95).asString("-fx-text-fill: #00ff88; -fx-font-size: %fpx; -fx-font-family: monospace;"));
+        upmaskLabel.setVisible(false);
+        upmaskLabel.setManaged(false);
+
+        leftreqLabel = new Label("LeftReq: ---");
+        leftreqLabel.styleProperty().bind(scene.widthProperty().divide(95).asString("-fx-text-fill: #ff8800; -fx-font-size: %fpx;"));
+        leftreqLabel.setVisible(false);
+        leftreqLabel.setManaged(false);
+
+        extraLabel = new Label("");
+        extraLabel.styleProperty().bind(scene.widthProperty().divide(95).asString("-fx-text-fill: #9b59b6; -fx-font-size: %fpx;"));
+        extraLabel.setVisible(false);
+        extraLabel.setManaged(false);
+
         VBox speedBox = new VBox(8);
         speedBox.setAlignment(Pos.CENTER);
         Label speedLabel = new Label("Visualizer Speed (0-500):");
@@ -162,7 +194,7 @@ public class VisualizerView extends VBox {
         speedSlider.setPrefWidth(180);
         speedBox.getChildren().addAll(speedLabel, speedSlider);
 
-        detailsBox.getChildren().addAll(algoLabel, new Separator(), stepInfoLabel, scoreLabel, new Separator(), speedBox);
+        detailsBox.getChildren().addAll(algoLabel, new Separator(), stepInfoLabel, scoreLabel, upmaskLabel, leftreqLabel, extraLabel, new Separator(), speedBox);
         sidePanel.getChildren().addAll(titleLabel, detailsBox);
         return sidePanel;
     }
@@ -211,34 +243,71 @@ public class VisualizerView extends VBox {
                 if (!playing) break;
                 final int idx = i;
                 VisualStep step = steps.get(idx);
-                
+
                 double sliderVal = speedSlider.getValue();
                 long stepDelay = (long) (1500.0 * Math.pow(0.001, sliderVal / 500.0));
                 double animDuration = Math.min(stepDelay * 0.8, 300); // 80% of delay or max 300ms
 
                 Platform.runLater(() -> {
+                    if ("REGION".equals(step.getType())) {
+                        updateRegionHighlight(step.getR0(), step.getR1(), step.getC0(), step.getC1());
+                        extraLabel.setText(String.format("Region: (%d,%d) to (%d,%d)", step.getR0(), step.getC0(), step.getR1()-1, step.getC1()-1));
+                        return;
+                    }
+
                     int r = step.getRow();
                     int c = step.getCol();
+                    if (r < 0 || c < 0) return;
                     TileView tv = tileViews[r][c];
-                    if ("SCORE".equals(step.getType())) {
-                        scoreLabel.setText(String.format("Score: %.2f", step.getScore()));
-                        tv.setStyle("-fx-border-color: #00d4ff; -fx-border-width: 4; -fx-background-color: rgba(0, 212, 255, 0.2);");
-                    } else {
-                        boolean isClockwise = !"UNDO".equals(step.getType());
-                        tv.getTile().setRotation(step.getRotation());
-                        tv.setRotationAnimated(step.getRotation(), animDuration, isClockwise);
-                        tv.setStyle("-fx-border-color: #00d4ff; -fx-border-width: 2;");
-                        stepInfoLabel.setText(String.format("Search: %s (%d, %d)", step.getType(), r, c));
+
+                    // For DAC, ensure region is highlighted while looking at tiles
+                    if (step.getR0() != -1) {
+                        updateRegionHighlight(step.getR0(), step.getR1(), step.getC0(), step.getC1());
                     }
-                });
+
+                    if (currentAlgoDisplay.toLowerCase().contains("dp") || currentAlgoDisplay.toLowerCase().contains("dynamic")) {
+
+        upmaskLabel.setVisible(true); upmaskLabel.setManaged(true);
+        leftreqLabel.setVisible(true); leftreqLabel.setManaged(true);
+        scoreLabel.setVisible(false); scoreLabel.setManaged(false);
+        extraLabel.setVisible(false); extraLabel.setManaged(false);
+        
+        String bin = Integer.toBinaryString(step.getUpmask());
+        while (bin.length() < initialState.getMeta().getWidth()) bin = "0" + bin;
+        upmaskLabel.setText("UpMask: " + bin);
+        leftreqLabel.setText("LeftReq: " + step.getLeftreq());
+    } else if (currentAlgoDisplay.toLowerCase().contains("greedy")) {
+        upmaskLabel.setVisible(false); upmaskLabel.setManaged(false);
+        leftreqLabel.setVisible(false); leftreqLabel.setManaged(false);
+        scoreLabel.setVisible(true); scoreLabel.setManaged(true);
+        extraLabel.setVisible(false); extraLabel.setManaged(false);
+    } else if (currentAlgoDisplay.toLowerCase().contains("conquer") || currentAlgoDisplay.toLowerCase().contains("dac")) {
+        upmaskLabel.setVisible(false); upmaskLabel.setManaged(false);
+        leftreqLabel.setVisible(false); leftreqLabel.setManaged(false);
+        scoreLabel.setVisible(false); scoreLabel.setManaged(false);
+        extraLabel.setVisible(true); extraLabel.setManaged(true);
+        extraLabel.setText("Region Search");
+    } else {
+        // Backtracking or other
+        upmaskLabel.setVisible(false); upmaskLabel.setManaged(false);
+        leftreqLabel.setVisible(false); leftreqLabel.setManaged(false);
+        scoreLabel.setVisible(false); scoreLabel.setManaged(false);
+        extraLabel.setVisible(false); extraLabel.setManaged(false);
+    }
+
+    if (step.getScore() > 0 || "SCORE".equals(step.getType())) {
+        scoreLabel.setText(String.format("Score: %.2f", step.getScore()));
+    } else {
+        boolean isClockwise = !"UNDO".equals(step.getType());
+        tv.getTile().setRotation(step.getRotation());
+        tv.setRotationAnimated(step.getRotation(), animDuration, isClockwise);
+        stepInfoLabel.setText(String.format("Search: %s (%d, %d)", step.getType(), r, c));
+    }
+});
 
                 try {
                     Thread.sleep(Math.max(2, stepDelay));
                 } catch (InterruptedException e) { break; }
-
-                Platform.runLater(() -> {
-                    tileViews[step.getRow()][step.getCol()].setStyle("");
-                });
             }
 
             if (playing && actualMove != null) {
@@ -261,7 +330,49 @@ public class VisualizerView extends VBox {
         }).start();
     }
 
+    private void updateRegionHighlight(int r0, int r1, int c0, int c1) {
+        if (r0 < 0 || r1 < 0 || c0 < 0 || c1 < 0) {
+            regionHighlight.setVisible(false);
+            return;
+        }
+        
+        // Find bounds of tiles in the region
+        double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
+        double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
+        
+        boolean found = false;
+        for (int r = r0; r < r1; r++) {
+            for (int c = c0; c < c1; c++) {
+                if (r >= 0 && r < tileViews.length && c >= 0 && c < tileViews[0].length) {
+                    TileView tv = tileViews[r][c];
+                    double tx = tv.getBoundsInParent().getMinX();
+                    double ty = tv.getBoundsInParent().getMinY();
+                    double tw = tv.getBoundsInParent().getWidth();
+                    double th = tv.getBoundsInParent().getHeight();
+                    
+                    minX = Math.min(minX, tx);
+                    minY = Math.min(minY, ty);
+                    maxX = Math.max(maxX, tx + tw);
+                    maxY = Math.max(maxY, ty + th);
+                    found = true;
+                }
+            }
+        }
+        
+        if (found) {
+            regionHighlight.setX(minX - 6);
+            regionHighlight.setY(minY - 6);
+            regionHighlight.setWidth(maxX - minX + 12);
+            regionHighlight.setHeight(maxY - minY + 12);
+            regionHighlight.setVisible(true);
+            regionHighlight.toBack(); // Ensure it is behind tiles but in grid
+        } else {
+            regionHighlight.setVisible(false);
+        }
+    }
+
     private void showFinalSelectionFrame(int row, int col) {
+        regionHighlight.setVisible(false);
         selectionFrame.setVisible(true);
         selectionFrame.toFront();
         
