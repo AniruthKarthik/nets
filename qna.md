@@ -57,7 +57,7 @@ We use DFS from the power source to ensure:
 
 ---
 
-## 5. Implementation Details
+## 6. Implementation Details
 
 ### Why a hybrid Java/C++ architecture?
 - **JavaFX** provides a modern, responsive UI.

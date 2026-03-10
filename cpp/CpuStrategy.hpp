@@ -11,8 +11,8 @@ using namespace std;
 
 // Implementations
 
-// Time Complexity: O(V) where V is number of tiles
-// Space Complexity: O(V) to store moves
+// Time Complexity: $O(V)$ where $V$ is number of tiles
+// Space Complexity: $O(V)$ to store moves
 inline vector<Move> generateMoves_greedy(const Board &board,
                                   pair<int, int> lastMovedTile) {
   vector<Move> moves;
@@ -33,7 +33,7 @@ inline vector<Move> generateMoves_greedy(const Board &board,
   return moves;
 }
 
-// Time Complexity: O(1) (checks 4 neighbors)
+// Time Complexity: $O(1)$ (checks 4 neighbors)
 inline int calculateLocalFit_greedy(const Board &board, const Move &move) {
   Tile t = board.at(move.x, move.y);
   t.rotation = move.rotation;
@@ -72,8 +72,8 @@ inline int calculateLocalFit_greedy(const Board &board, const Move &move) {
   return score;
 }
 
-// Time Complexity: O(1)
-// Space Complexity: O(1)
+// Time Complexity: $O(1)$
+// Space Complexity: $O(1)$
 inline void swapMoves(Move &a, Move &b) {
   Move temp = a;
   a = b;
@@ -81,8 +81,8 @@ inline void swapMoves(Move &a, Move &b) {
 }
 
 // Partition function for Quick Sort
-// Time Complexity: O(M) where M is range [low, high]
-// Space Complexity: O(1)
+// Time Complexity: $O(M)$ where $M$ is range [low, high]
+// Space Complexity: $O(1)$
 inline int quickSort_partition_greedy(vector<Move> &moves, int low, int high,
                                const Board &board) {
   Move pivot = moves[high];
@@ -102,8 +102,8 @@ inline int quickSort_partition_greedy(vector<Move> &moves, int low, int high,
 }
 
 // Recursive Quick Sort function
-// Time Complexity: Best/Avg O(M log M), Worst O(M^2) where M is number of moves
-// Space Complexity: O(log M) stack space
+// Time Complexity: Best/Avg $O(M \log M)$, Worst $O(M^2)$ where $M$ is number of moves
+// Space Complexity: $O(\log M)$ stack space
 inline void quickSort_recursive_greedy(vector<Move> &moves, int low, int high,
                                 const Board &board) {
   if (low < high) {
@@ -113,16 +113,16 @@ inline void quickSort_recursive_greedy(vector<Move> &moves, int low, int high,
   }
 }
 
-// Time Complexity: O(M log M)
-// Space Complexity: O(log M)
+// Time Complexity: $O(M \log M)$
+// Space Complexity: $O(\log M)$
 inline void sortMoves_greedy(vector<Move> &moves, const Board &board) {
   if (!moves.empty()) {
     quickSort_recursive_greedy(moves, 0, moves.size() - 1, board);
   }
 }
 
-// Time Complexity: O(V log V) due to buildGraph
-// Space Complexity: O(V)
+// Time Complexity: $O(V \log V)$ due to buildGraph
+// Space Complexity: $O(V)$
 inline int evaluateBoard_greedy(const Board &board) {
   Graph graph = buildGraph(board);
   int looseEnds = countLooseEnds(board);
@@ -134,8 +134,8 @@ inline int evaluateBoard_greedy(const Board &board) {
   return score;
 }
 
-// Time Complexity: O(M * V log V) where M is number of moves (approx V), so
-// O(V^2 log V) Space Complexity: O(V)
+// Time Complexity: $O(M \cdot V \log V)$ where $M$ is number of moves (approx $V$), so
+// $O(V^2 \log V)$ Space Complexity: $O(V)$
 inline Move chooseBestMove_greedy(const Board &board, pair<int, int> lastMovedTile) {
   vector<Move> moves = generateMoves_greedy(board, lastMovedTile);
   if (moves.empty()) {

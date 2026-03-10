@@ -22,5 +22,5 @@ By splitting the board, the solver can detect contradictions early at the bounda
 - **Leaf Threshold:** Small regions are solved directly using the optimized leaf enumerator.
 
 ## Complexity
-- **Time Complexity:** $O(k^N)$ worst-case, but region-based ordering often finds solutions faster on large, structured grids.
-- **Space Complexity:** $O(N)$ for the recursion and region metadata.
+- **Time Complexity:** $O(k^N)$ worst-case. Although structured by region splits, it remains a search-based strategy. The region-based ordering aims to find contradictions at boundaries early, effectively pruning branches.
+- **Space Complexity:** $O(N)$ for the recursion stack, region metadata, and the `fixedMap` used during traversal.

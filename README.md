@@ -10,7 +10,7 @@ This project demonstrates the practical application of **Design and Analysis of 
 ## Key Features
 *   **Hybrid Architecture:** Java for the interactive UI and C++ for heavy algorithmic processing.
 *   **Procedural Level Generation:** Uses **Randomized Prim's Algorithm** to generate unique, solvable puzzles every time.
-*   **High-Performance Engine:** Optimized C++ backend using bitwise operations, cache-friendly data structures (1D grid), and O(1) graph lookups.
+*   **High-Performance Engine:** Optimized C++ backend using bitwise operations, cache-friendly data structures (1D grid), and $O(1)$ graph lookups.
 *   **Advanced AI Visualizer:** A specialized mode to watch the AI's search process in real-time with smooth, directional animations.
 *   **Multiple Solvers:** Includes **Backtracking (BT)**, **Dynamic Programming (DP)**, and **Divide & Conquer (D&C)** implementations.
 *   **Real-time Graph Analysis:** Instant feedback on connectivity, loops, and loose ends using **DFS**.
@@ -30,8 +30,8 @@ This project demonstrates the practical application of **Design and Analysis of 
 
 ### 🚀 Engine Performance
 *   **1D Grid Flattening:** The board representation was moved from a 2D `vector<vector<Tile>>` to a 1D `vector<Tile>`. This significantly improves cache hits and reduces memory allocation overhead during recursive solving.
-*   **Bitwise Port Matching:** Replaced expensive `vector<Direction>` allocations with `uint8_t` bitmasks. Constraint checking now uses O(1) bitwise AND/SHIFT operations.
-*   **Graph Optimization:** Replaced `std::map` and `std::set` in the Graph structure with flattened `std::vector` and `vector<bool>`, reducing graph traversal overhead from O(log V) to O(1).
+*   **Bitwise Port Matching:** Replaced expensive `vector<Direction>` allocations with `uint8_t` bitmasks. Constraint checking now uses $O(1)$ bitwise AND/SHIFT operations.
+*   **Graph Optimization:** Replaced `std::map` and `std::set` in the Graph structure with flattened `std::vector` and `vector<bool>`, reducing graph traversal overhead from $O(\log V)$ to $O(1)$.
 
 ### 🎨 UI & Visualization
 *   **Directional Animations:** The AI Visualizer now uses intelligent rotation logic:

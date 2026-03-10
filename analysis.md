@@ -4,9 +4,9 @@
 This updated analysis evaluates the Time and Space Complexity of the NETS project following the implementation of unified solver logic and optimized backtracking, dynamic programming, and divide-and-conquer strategies.
 
 **Variables Used:**
-- N: Total number of tiles on the board (N = Rows x Cols).
-- W: Width of the board.
-- k: Maximum number of rotations per tile (k=4).
+- $N$: Total number of tiles on the board ($N = \text{Rows} \times \text{Cols}$).
+- $W$: Width of the board.
+- $k$: Maximum number of rotations per tile ($k=4$).
 
 ---
 
@@ -20,7 +20,7 @@ This updated analysis evaluates the Time and Space Complexity of the NETS projec
 ### File: cpp/DpSolver.hpp (Dynamic Programming)
 | Algorithm | Time Complexity | Space Complexity | Notes |
 |---|---|---|---|
-| DP Solver (solve_dp) | $O(N \cdot 2^W)$ | $O(N \cdot 2^W)$ | Optimized row-major traversal with memoized frontier state. Most efficient for boards with small width $W$. |
+| DP Solver (solve_dp) | $O(N \cdot 2^W)$ | $O(N \cdot 2^W)$ | Optimized row-major traversal with memoized frontier state. Most efficient for boards with small width $W$. For wrapping boards, time is $O(N \cdot 4^W)$. |
 
 ### File: cpp/DacSolver.hpp (Divide and Conquer)
 | Algorithm | Time Complexity | Space Complexity | Notes |
@@ -44,7 +44,7 @@ This updated analysis evaluates the Time and Space Complexity of the NETS projec
 ### File: cpp/ConnectivityCheck.hpp (DFS)
 | Function | Time Complexity | Space Complexity | Notes |
 |---|---|---|---|
-| isSolved | $O(N)$ | $O(N)$ | Verifies win condition (connectivity, acyclicity, loose ends) using optimized DFS traversal with integer-indexed adjacency lists and O(1) visited checks. |
+| isSolved | $O(N)$ | $O(N)$ | Verifies win condition (connectivity, acyclicity, loose ends) using optimized DFS traversal with integer-indexed adjacency lists and $O(1)$ visited checks. |
 
 ---
 
@@ -68,18 +68,19 @@ By centralizing port mask calculation in `SolverUtils.hpp`, all solvers now shar
 The use of **Merge Sort (Divide and Conquer)** to order tiles by their constraint degree (degree + adjacency to boundaries) allows the recursive solvers (BT and DAC) to prune search branches much earlier, avoiding $O(k^N)$ worst-case scenarios in practice.
 
 ### Frontier State Memoization
-The DP solver effectively manages the state-space search by only storing the necessary boundary information ("frontier"), leading to linear-time complexity with respect to the number of rows for a fixed width.
+The DP solver effectively manages the state-space search by only storing the necessary boundary information ("frontier"), leading to linear-time complexity with respect to the number of rows for a fixed width. For wrapping boards, it iterates through all boundary configurations, resulting in $O(N \cdot 4^W)$ time.
 
 ---
 
 ## 5. Summary Table
 
-| Paradigm | Algorithm | Best For | Typical Time |
-|---|---|---|---|
-| **Greedy** | CPU Strategy | Real-time moves | $O(N^2 \log N)$ |
-| **Backtracking** | BT Solver | Small/Medium grids | $O(k^N)$ (Pruned) |
-| **DP** | DP Solver | Small width, any height | $O(N \cdot 2^W)$ |
-| **Divide & Conquer** | DAC Solver | Large structured grids | $O(k^N)$ (Pruned) |
-| **Sorting (D&C)** | Merge Sort | Tile prioritization | $O(N \log N)$ |
-| **Sorting** | Quick Sort | Move selection | $O(N \log N)$ |
-| **Traversal** | DFS | Win condition checks | $O(N)$ |
+| Paradigm | Algorithm | Best For | Typical Time | Typical Space |
+|---|---|---|---|---|
+| **Greedy** | CPU Strategy | Real-time moves | $O(N^2)$ | $O(N)$ |
+| **Backtracking** | BT Solver | Small/Medium grids | $O(k^N)$ (Pruned) | $O(N)$ |
+| **DP** | DP Solver | Small width ($W \le 16$) | $O(N \cdot 2^W)$ | $O(N \cdot 2^W)$ |
+| **DP (Wrapping)** | DP Solver | Toroidal grids | $O(N \cdot 4^W)$ | $O(N \cdot 2^W)$ |
+| **Divide & Conquer** | DAC Solver | Large structured grids | $O(k^N)$ (Pruned) | $O(N)$ |
+| **Sorting (D&C)** | Merge Sort | Tile prioritization | $O(N \log N)$ | $O(N)$ |
+| **Sorting** | Quick Sort | Move selection | $O(N \log N)$ | $O(\log M)$ |
+| **Traversal** | DFS | Win condition checks | $O(N)$ | $O(N)$ |

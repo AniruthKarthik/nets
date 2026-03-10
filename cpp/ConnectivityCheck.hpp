@@ -3,218 +3,171 @@
 
 #include "GraphBuilder.hpp"
 #include "Tile.hpp"
-#include <set>
-#include <iostream>
+#include "SolverUtils.hpp"
+#include <algorithm>
+#include <vector>
 
 using namespace std;
 
-// Implementations
-
-// Time Complexity: O(V + E) where V is nodes, E is edges. Since max degree is 4, O(V).
-// Space Complexity: O(V) for visited set and recursion stack.
-inline void dfs(const Graph &graph, pair<int, int> node, vector<bool> &visited)
+// Time Complexity: $O(V)$ where $V$ is number of tiles. Max degree is 4, so $E \le 4V$.
+// Space Complexity: $O(V)$ for visited vector and recursion stack.
+inline void dfs(const Graph &graph, int node, vector<bool> &visited)
 {
-	visited[node.first * graph.width + node.second] = true;
-
-	for (const auto &neighbor : graph.adjList[node.first * graph.width + node.second])
+	visited[node] = true;
+	for (const auto &neighbor : graph.adjList[node])
 	{
-		if (!visited[neighbor.first * graph.width + neighbor.second])
+        int neighborIdx = neighbor.first * graph.width + neighbor.second;
+		if (!visited[neighborIdx])
 		{
-			dfs(graph, neighbor, visited);
+			dfs(graph, neighborIdx, visited);
 		}
 	}
 }
 
-// Time Complexity: O(V)
-// Space Complexity: O(V)
-inline bool isFullyConnected(const Graph &graph, pair<int, int> powerSource)
-{
-	if (graph.nodeCount() == 0)
-		return false;
-
-	vector<bool> visited(graph.adjList.size(), false);
-	dfs(graph, powerSource, visited);
-
-    int visitedCount = 0;
-    for (bool v : visited) if (v) visitedCount++;
-
-	return visitedCount == graph.nodeCount();
-}
-
-// Time Complexity: O(V)
-// Space Complexity: O(V)
+// Time Complexity: $O(V)$
+// Space Complexity: $O(V)$
 inline int countComponents(const Graph &graph)
 {
-	vector<bool> visited(graph.adjList.size(), false);
-	int components = 0;
-
-	for (int i = 0; i < (int)graph.adjList.size(); ++i)
+	int count = 0;
+	vector<bool> visited(graph.nodesExist.size(), false);
+	for (size_t i = 0; i < graph.nodesExist.size(); i++)
 	{
-		if (!visited[i] && graph.nodesExist[i])
+		if (graph.nodesExist[i] && !visited[i])
 		{
-			components++;
-            int r = i / graph.width;
-            int c = i % graph.width;
-			dfs(graph, {r, c}, visited);
+			dfs(graph, i, visited);
+			count++;
 		}
 	}
-	return components;
+	return count;
 }
 
-// Time Complexity: O(V log V) due to buildGraph using std::map
-// Space Complexity: O(V)
-inline int countComponents(const Board &board)
+// Time Complexity: $O(V)$
+// Space Complexity: $O(V)$
+inline int countVisitedNodes(const Graph &graph)
 {
-	Graph graph = buildGraph(board);
-	return countComponents(graph);
+	vector<bool> visited(graph.nodesExist.size(), false);
+	for (size_t i = 0; i < graph.nodesExist.size(); i++)
+	{
+		if (graph.nodesExist[i])
+		{
+			dfs(graph, i, visited);
+			break; // Start from first existing node
+		}
+	}
+	int count = 0;
+	for (bool v : visited)
+		if (v)
+			count++;
+	return count;
 }
 
-// Time Complexity: O(V) - Iterates all tiles once
-// Space Complexity: O(1)
+// Time Complexity: $O(V)$ (Optimized to avoid map lookups)
+// Space Complexity: $O(V)$
 inline int countLooseEnds(const Board &board)
 {
 	int looseEnds = 0;
-
-	for (int row = 0; row < board.height; row++)
+	for (int r = 0; r < board.height; r++)
 	{
-		for (int col = 0; col < board.width; col++)
+		for (int c = 0; c < board.width; c++)
 		{
-			const Tile &tile = board.at(row, col);
-
-			if (tile.type == EMPTY || tile.type == POWER)
+			const Tile &tile = board.at(r, c);
+			if (tile.type == EMPTY)
 				continue;
 
 			uint8_t mask = getActivePortsMask(tile);
-
 			for (int d = 0; d < 4; d++)
 			{
-                if (!(mask & (1 << d))) continue;
-                Direction dir = static_cast<Direction>(d);
-				pair<int, int> neighborPos = getNeighbor(
-				    row, col, dir, board.width, board.height, board.wraps);
+				if (!(mask & (1 << d)))
+					continue;
 
-				bool hasMatchingPort = false;
+				Direction dir = static_cast<Direction>(d);
+				pair<int, int> nPos = getNeighbor(r, c, dir, board.width, board.height, board.wraps);
 
-				if (neighborPos.first != -1)
+				if (nPos.first == -1)
 				{
-					const Tile &neighbor =
-					    board.at(neighborPos.first, neighborPos.second);
-
-					if (neighbor.type != EMPTY)
-					{
-						uint8_t neighborMask = getActivePortsMask(neighbor);
-						Direction oppositeDir = opposite(dir);
-                        if (neighborMask & (1 << oppositeDir)) {
-                            hasMatchingPort = true;
-                        }
-					}
+					looseEnds++;
+					continue;
 				}
 
-				if (!hasMatchingPort)
+				const Tile &nTile = board.at(nPos.first, nPos.second);
+				if (nTile.type == EMPTY)
+				{
+					looseEnds++;
+					continue;
+				}
+
+				uint8_t nMask = getActivePortsMask(nTile);
+				if (!(nMask & (1 << opposite(dir))))
 				{
 					looseEnds++;
 				}
 			}
 		}
 	}
-
 	return looseEnds;
 }
 
-// Time Complexity: O(V)
-// Space Complexity: O(V) for recursion stack
-inline bool dfsCycleDetection(const Graph &graph, pair<int, int> node,
-                       pair<int, int> parent, vector<bool> &visited)
+// Time Complexity: $O(V)$
+// Space Complexity: $O(V)$ for recursion stack
+inline bool hasCycleDFS(const Graph &graph, int u, int p, vector<bool> &visited)
 {
-	visited[node.first * graph.width + node.second] = true;
-
-	for (const auto &neighbor : graph.adjList[node.first * graph.width + node.second])
+	visited[u] = true;
+	for (const auto &neighbor : graph.adjList[u])
 	{
-		if (!visited[neighbor.first * graph.width + neighbor.second])
+        int v = neighbor.first * graph.width + neighbor.second;
+		if (!visited[v])
 		{
-			if (dfsCycleDetection(graph, neighbor, node, visited))
-			{
+			if (hasCycleDFS(graph, v, u, visited))
 				return true;
-			}
 		}
-		else if (neighbor != parent)
+		else if (v != p)
 		{
 			return true;
 		}
 	}
-
 	return false;
 }
 
-// Time Complexity: O(V)
-// Space Complexity: O(V)
-inline bool hasClosedLoop(const Graph &graph, pair<int, int> startNode)
-{
-	vector<bool> visited(graph.adjList.size(), false);
-	return dfsCycleDetection(graph, startNode, {-1, -1}, visited);
-}
-
-// Time Complexity: O(V)
-// Space Complexity: O(V)
+// Time Complexity: $O(V)$
+// Space Complexity: $O(V)$
 inline bool hasClosedLoop(const Graph &graph)
 {
-	vector<bool> visited(graph.adjList.size(), false);
-
-	for (int i = 0; i < (int)graph.adjList.size(); ++i)
+	vector<bool> visited(graph.nodesExist.size(), false);
+	for (size_t i = 0; i < graph.nodesExist.size(); i++)
 	{
-		if (!visited[i] && graph.nodesExist[i])
+		if (graph.nodesExist[i] && !visited[i])
 		{
-            int r = i / graph.width;
-            int c = i % graph.width;
-			if (dfsCycleDetection(graph, {r, c}, {-1, -1}, visited))
-			{
+			if (hasCycleDFS(graph, i, -1, visited))
 				return true;
-			}
 		}
 	}
 	return false;
 }
 
-// Time Complexity: O(V log V) due to buildGraph
-// Space Complexity: O(V)
-inline bool hasClosedLoop(const Board &board)
+// Time Complexity: $O(V)$
+// Space Complexity: $O(V)$
+inline bool isConnected(const Board &board)
 {
 	Graph graph = buildGraph(board);
-	return hasClosedLoop(graph);
+	if (graph.nodeCount() == 0)
+		return true;
+	return countVisitedNodes(graph) == graph.nodeCount();
 }
 
-// Time Complexity: O(V log V) dominated by buildGraph
-// Space Complexity: O(V)
+// Time Complexity: $O(V)$
+// Space Complexity: $O(V)$
 inline bool isSolved(const Board &board)
 {
-	if (board.powerTile.first == -1)
-	{
-		// std::cout << "Error: No power source found!" << std::endl;
+	if (countLooseEnds(board) > 0)
 		return false;
-	}
 
 	Graph graph = buildGraph(board);
-
-	int looseEnds = countLooseEnds(board);
-	if (looseEnds > 0)
-	{
-		// std::cout << "Loose ends detected: " << looseEnds << std::endl;
+	if (countVisitedNodes(graph) != graph.nodeCount())
 		return false;
-	}
 
-	if (!isFullyConnected(graph, board.powerTile))
-	{
-		// std::cout << "Network is not fully connected!" << std::endl;
+	if (hasClosedLoop(graph))
 		return false;
-	}
 
-	if (hasClosedLoop(graph, board.powerTile))
-	{
-		// std::cout << "Closed loop detected!" << std::endl;
-		return false;
-	}
-
-	// std::cout << "✓ Puzzle solved!" << std::endl;
 	return true;
 }
 

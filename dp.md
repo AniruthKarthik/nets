@@ -24,5 +24,7 @@ This compact representation ensures high hit rates in the memoization table.
 For wrapping boards, the solver iterates through all possible boundary configurations (initial North and West requirements) and solves for each. This ensures that the global solution respects the toroidal topology of the grid.
 
 ## Complexity
-- **Time Complexity:** $O(N \cdot 2^W)$ where $W$ is the width of the board. This is significantly better than $O(4^N)$ for boards where the width is relatively small.
-- **Space Complexity:** $O(S)$ where $S$ is the number of visited states in the memoization table.
+- **Time Complexity:**
+  - **Non-Wrapping:** $O(N \cdot 2^W)$ where $N$ is the total number of tiles and $W$ is the board width. This is because the frontier consists of $W$ ports, each with 2 states.
+  - **Wrapping:** $O(N \cdot 4^W)$ due to the need to iterate through all $2^{W+1}$ boundary configurations (North and West wraps) and solve for each.
+- **Space Complexity:** $O(N \cdot 2^W)$ for the memoization table, which stores results for each state `(idx, upMask, leftReq)`.
