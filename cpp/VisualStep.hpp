@@ -14,8 +14,6 @@ struct VisualStep {
     int rotation;
     string type; // "TRY", "UNDO", "SUCCESS", "FAIL", "CONSIDER", "SCORE"
     double score;
-    int upmask;
-    int leftreq;
 
     json to_json() const {
         return {
@@ -23,9 +21,7 @@ struct VisualStep {
             {"col", col},
             {"rotation", rotation},
             {"type", type},
-            {"score", score},
-            {"upmask", upmask},
-            {"leftreq", leftreq}
+            {"score", score}
         };
     }
 };

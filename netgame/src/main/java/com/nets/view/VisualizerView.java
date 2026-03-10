@@ -33,8 +33,6 @@ public class VisualizerView extends VBox {
     private Label stepInfoLabel;
     private Label algoLabel;
     private Label scoreLabel;
-    private Label upmaskLabel;
-    private Label leftreqLabel;
     private Slider speedSlider;
     private boolean playing = false;
     private Rectangle selectionFrame;
@@ -156,16 +154,6 @@ public class VisualizerView extends VBox {
         scoreLabel = new Label("Score: ---");
         scoreLabel.styleProperty().bind(scene.widthProperty().divide(70).asString("-fx-text-fill: #ffc107; -fx-font-size: %fpx; -fx-font-weight: bold;"));
 
-        upmaskLabel = new Label("UpMask: ---");
-        upmaskLabel.styleProperty().bind(scene.widthProperty().divide(85).asString("-fx-text-fill: #00ff88; -fx-font-size: %fpx;"));
-        upmaskLabel.setManaged(false);
-        upmaskLabel.setVisible(false);
-
-        leftreqLabel = new Label("LeftReq: ---");
-        leftreqLabel.styleProperty().bind(scene.widthProperty().divide(85).asString("-fx-text-fill: #ff8800; -fx-font-size: %fpx;"));
-        leftreqLabel.setManaged(false);
-        leftreqLabel.setVisible(false);
-
         VBox speedBox = new VBox(8);
         speedBox.setAlignment(Pos.CENTER);
         Label speedLabel = new Label("Visualizer Speed (0-500):");
@@ -174,7 +162,7 @@ public class VisualizerView extends VBox {
         speedSlider.setPrefWidth(180);
         speedBox.getChildren().addAll(speedLabel, speedSlider);
 
-        detailsBox.getChildren().addAll(algoLabel, new Separator(), stepInfoLabel, scoreLabel, upmaskLabel, leftreqLabel, new Separator(), speedBox);
+        detailsBox.getChildren().addAll(algoLabel, new Separator(), stepInfoLabel, scoreLabel, new Separator(), speedBox);
         sidePanel.getChildren().addAll(titleLabel, detailsBox);
         return sidePanel;
     }
@@ -232,37 +220,8 @@ public class VisualizerView extends VBox {
                     int r = step.getRow();
                     int c = step.getCol();
                     TileView tv = tileViews[r][c];
-                    
-                    if (step.getScore() > 0 || "SCORE".equals(step.getType())) {
-                        scoreLabel.setText(String.format("Score: %.2f", step.getScore()));
-                    }
-
-                    if ("dp".equalsIgnoreCase(currentAlgoDisplay) || currentAlgoDisplay.toLowerCase().contains("dynamic")) {
-                        String binaryUpmask = Integer.toBinaryString(step.getUpmask());
-                        // Pad with zeros to match width
-                        int width = initialState.getMeta().getWidth();
-                        while (binaryUpmask.length() < width) binaryUpmask = "0" + binaryUpmask;
-                        
-                        upmaskLabel.setText("UpMask: " + binaryUpmask);
-                        leftreqLabel.setText("LeftReq: " + step.getLeftreq());
-                        upmaskLabel.setVisible(true);
-                        upmaskLabel.setManaged(true);
-                        leftreqLabel.setVisible(true);
-                        leftreqLabel.setManaged(true);
-                        
-                        scoreLabel.setVisible(false);
-                        scoreLabel.setManaged(false);
-                    } else {
-                        upmaskLabel.setVisible(false);
-                        upmaskLabel.setManaged(false);
-                        leftreqLabel.setVisible(false);
-                        leftreqLabel.setManaged(false);
-                        
-                        scoreLabel.setVisible(true);
-                        scoreLabel.setManaged(true);
-                    }
-
                     if ("SCORE".equals(step.getType())) {
+                        scoreLabel.setText(String.format("Score: %.2f", step.getScore()));
                         tv.setStyle("-fx-border-color: #00d4ff; -fx-border-width: 4; -fx-background-color: rgba(0, 212, 255, 0.2);");
                     } else {
                         boolean isClockwise = !"UNDO".equals(step.getType());

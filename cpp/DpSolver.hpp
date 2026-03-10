@@ -3,7 +3,6 @@
 
 #include "Tile.hpp"
 #include "SolverUtils.hpp"
-#include "VisualStep.hpp"
 #include <vector>
 #include <unordered_map>
 #include <cstdint>
@@ -13,9 +12,6 @@ using namespace std;
 class DpSolver {
 public:
     explicit DpSolver(Board &b) : board(b), width(b.width), height(b.height) {}
-
-    vector<VisualStep> steps;
-    bool record_steps = false;
 
     bool solve() {
         if (width > 16) return false; // upMask limit
@@ -29,10 +25,13 @@ public:
             }
         } else {
             // Brute force the wrap-around constraints
+            // initialUp: North connections for row 0 (which are south connections from row height-1)
+            // initialWest: West connections for col 0 (which are east connections from col width-1)
             for (uint16_t initialUp = 0; initialUp < (1 << width); ++initialUp) {
                 for (uint8_t initialWest = 0; initialWest < 2; ++initialWest) {
                     memo.clear();
                     choice.clear();
+                    // We need to match these at the end
                     if (solveRecursive(0, initialUp, initialWest, initialWest, initialUp)) {
                         applySolution(0, initialUp, initialWest, initialWest, initialUp);
                         return true;
@@ -49,13 +48,14 @@ private:
     unordered_map<uint64_t, bool> memo;
     unordered_map<uint64_t, uint8_t> choice;
 
+    // State encoding: index (16 bits) | upMask (16 bits) | leftReq (1 bit)
     uint64_t encode(int idx, uint16_t upMask, uint8_t leftReq) {
         return (static_cast<uint64_t>(idx) << 17) | (static_cast<uint64_t>(upMask) << 1) | leftReq;
     }
 
     bool solveRecursive(int idx, uint16_t upMask, uint8_t leftReq, uint8_t rowWrapTarget, uint16_t colWrapTarget) {
         if (idx == width * height) {
-            return (upMask == colWrapTarget);
+            return (upMask == colWrapTarget); // All south connections from last row must match colWrapTarget
         }
 
         uint64_t key = encode(idx, upMask, leftReq);
@@ -68,18 +68,15 @@ private:
         uint8_t reqNorth = (upMask >> c) & 1;
         uint8_t reqWest = leftReq;
 
-        int originalRot = board.at(r, c).rotation;
         vector<int> rotations = getRotationOptions(tile);
         for (size_t i = 0; i < rotations.size(); ++i) {
             int rot = rotations[i];
-            
-            if (record_steps) {
-                steps.push_back({r, c, rot, "TRY", 0, (int)upMask, (int)leftReq});
-            }
-
+            uint8_t mask = getPortMask(Tile(tile.type, rot, false)); // Use temp tile for custom conns check if needed
+            // Wait, getPortMask already handles customConnections if we pass the tile.
+            // But we need to set the rotation temporarily.
             Tile tempTile = tile;
             tempTile.rotation = rot;
-            uint8_t mask = getPortMask(tempTile);
+            mask = getPortMask(tempTile);
 
             uint8_t n = (mask >> NORTH) & 1;
             uint8_t e = (mask >> EAST) & 1;
@@ -88,6 +85,7 @@ private:
 
             if (n != reqNorth || w != reqWest) continue;
 
+            // Boundary checks (no wrap)
             if (!board.wraps) {
                 if (r == 0 && n != 0) continue;
                 if (r == height - 1 && s != 0) continue;
@@ -100,24 +98,26 @@ private:
             else nextUpMask &= ~(1 << c);
 
             uint8_t nextLeftReq;
+            uint8_t nextRowWrapTarget = rowWrapTarget;
             if (c == width - 1) {
                 if (board.wraps && e != rowWrapTarget) continue;
                 if (!board.wraps && e != 0) continue;
-                nextLeftReq = rowWrapTarget;
+                
+                if (r == height - 1) {
+                    nextLeftReq = 0; // Doesn't matter, will exit
+                } else {
+                    // Start next row. Need to decide next row's wrap target if we were brute-forcing it differently?
+                    // Actually, rowWrapTarget is constant for the whole solve attempt.
+                    nextLeftReq = rowWrapTarget; 
+                }
             } else {
                 nextLeftReq = e;
             }
 
-            board.at(r, c).rotation = rot; // Temporarily apply for deeper recursion if we wanted board-based evaluation
-            if (solveRecursive(idx + 1, nextUpMask, nextLeftReq, rowWrapTarget, colWrapTarget)) {
+            if (solveRecursive(idx + 1, nextUpMask, nextLeftReq, nextRowWrapTarget, colWrapTarget)) {
                 choice[key] = (uint8_t)i;
                 return memo[key] = true;
             }
-            board.at(r, c).rotation = originalRot;
-        }
-
-        if (record_steps) {
-            steps.push_back({r, c, originalRot, "UNDO", 0, (int)upMask, (int)leftReq});
         }
 
         return memo[key] = false;
@@ -152,12 +152,9 @@ private:
     }
 };
 
-inline bool solve_dp(Board &board, vector<VisualStep>* steps_out = nullptr) {
+inline bool solve_dp(Board &board) {
     DpSolver solver(board);
-    if (steps_out) solver.record_steps = true;
-    bool res = solver.solve();
-    if (steps_out) *steps_out = solver.steps;
-    return res;
+    return solver.solve();
 }
 
 #endif // DP_SOLVER_HPP

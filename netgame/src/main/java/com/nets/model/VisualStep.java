@@ -6,8 +6,6 @@ public class VisualStep {
     private int rotation;
     private String type; // "TRY", "UNDO", "SUCCESS", "FAIL", "CONSIDER", "SCORE"
     private double score;
-    private int upmask;
-    private int leftreq;
 
     public VisualStep() {}
 
@@ -16,6 +14,4 @@ public class VisualStep {
     public int getRotation() { return rotation; }
     public String getType() { return type; }
     public double getScore() { return score; }
-    public int getUpmask() { return upmask; }
-    public int getLeftreq() { return leftreq; }
 }

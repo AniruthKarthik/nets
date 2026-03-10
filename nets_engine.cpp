@@ -146,13 +146,10 @@ int main(int argc, char *argv[]) {
                     steps.push_back({r, c, originalRot, "UNDO", 0});
                 }
             }
-        } else if (algo == "backtracking" || algo == "divideandconquer") {
-            // For now, DAC also use BT visualization to show a "searching" process
+        } else if (algo == "backtracking" || algo == "dp" || algo == "divideandconquer") {
+            // For now, DP and DAC also use BT visualization to show a "searching" process
             Board solvedBoard = state.board;
             solve_bt(solvedBoard, &steps);
-        } else if (algo == "dp") {
-            Board solvedBoard = state.board;
-            solve_dp(solvedBoard, &steps);
         }
         
         json steps_json = json::array();
