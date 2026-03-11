@@ -177,7 +177,7 @@ public class VisualizerView extends VBox {
         upmaskLabel.setManaged(false);
 
         leftreqLabel = new Label("LeftReq: ---");
-        leftreqLabel.styleProperty().bind(scene.widthProperty().divide(95).asString("-fx-text-fill: #ff8800; -fx-font-size: %fpx;"));
+        leftreqLabel.styleProperty().bind(scene.widthProperty().divide(95).asString("-fx-text-fill: #ff8800; -fx-font-size: %fpx; -fx-font-family: monospace;"));
         leftreqLabel.setVisible(false);
         leftreqLabel.setManaged(false);
 
@@ -272,9 +272,14 @@ public class VisualizerView extends VBox {
         scoreLabel.setVisible(false); scoreLabel.setManaged(false);
         extraLabel.setVisible(false); extraLabel.setManaged(false);
         
-        String bin = Integer.toBinaryString(step.getUpmask());
-        while (bin.length() < initialState.getMeta().getWidth()) bin = "0" + bin;
-        upmaskLabel.setText("UpMask: " + bin);
+        StringBuilder sb = new StringBuilder();
+        int width = initialState.getMeta().getWidth();
+        for (int j = 0; j < width; j++) {
+            if (j == c) sb.append("[");
+            sb.append((step.getUpmask() >> j) & 1);
+            if (j == c) sb.append("]");
+        }
+        upmaskLabel.setText("UpMask:  " + sb.toString());
         leftreqLabel.setText("LeftReq: " + step.getLeftreq());
     } else if (currentAlgoDisplay.toLowerCase().contains("greedy")) {
         upmaskLabel.setVisible(false); upmaskLabel.setManaged(false);
